@@ -1,0 +1,58 @@
+name: Landing page
+
+on:
+  push:
+    branches: [main]
+    paths: ["landing/**", ".github/workflows/pages.yml"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate link checker
+        run: node landing/validate.test.mjs
+
+      # Point the Download button at this repo's latest release asset and show its version/size.
+      - name: Generate landing/config.js
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          version=""; size=""
+          if json=$(gh release view --repo "$REPO" --json tagName,assets 2>/dev/null); then
+            version=$(echo "$json" | jq -r '.tagName // ""' | sed 's/^v//')
+            bytes=$(echo "$json" | jq -r '[.assets[] | select(.name=="gallery.apk")][0].size // 0')
+            if [ "$bytes" -gt 0 ]; then size=$(awk -v b="$bytes" 'BEGIN{printf "%.1f MB", b/1048576}'); fi
+          fi
+          cat > landing/config.js <<EOF
+          export const CONFIG = {
+            downloadUrl: 'https://github.com/${REPO}/releases/latest/download/gallery.apk',
+            version: '${version}',
+            size: '${size}',
+          };
+          EOF
+          cat landing/config.js
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing
+      - id: deployment
+        uses: actions/deploy-pages@v4

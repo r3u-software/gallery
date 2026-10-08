@@ -27,6 +27,7 @@ import com.example.gallery.android.GalleryService
 import com.example.gallery.android.Permissions
 import com.example.gallery.android.ServerState
 import com.example.gallery.android.ServerStateHolder
+import com.example.gallery.android.TrashCoordinator
 
 /** Survives rotation, but not the activity being destroyed, so every fresh launch asks for unlock again. */
 class MainViewModel : ViewModel() {
@@ -61,6 +62,11 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        // A trash request is waiting for the user's answer (e.g. the heads-up notification was missed or
+        // notifications are off): surface the system dialog now that the app is in front.
+        if (TrashCoordinator.pending != null) {
+            startActivity(Intent(this, TrashConfirmActivity::class.java))
+        }
     }
 
     // ------------------------------------------------------------ UI

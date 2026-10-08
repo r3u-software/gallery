@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; form-action 'none'; base-uri 'none'">
+  <title>Gallery</title>
+  <meta name="description" content="Browse your Android phone's photos from your computer over Wi-Fi. No cable, no cloud.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>Gallery</h1>
+      <p class="lead">Browse your phone’s photos from your computer, over your own Wi-Fi. No cable, no cloud, no account.</p>
+    </header>
+
+    <ol class="steps">
+      <li class="card">
+        <span class="num" aria-hidden="true">1</span>
+        <h2>Get the app</h2>
+        <p>Download the Android app to your phone.</p>
+        <a class="btn" id="download" href="#">Download APK</a>
+        <p class="meta" id="dlMeta"></p>
+        <p class="note">Your browser will ask to allow <strong>Install unknown apps</strong> for it. Approve that once. Google Play Protect may also show a warning because the app isn’t from the Play Store; choose <strong>Install anyway</strong>.</p>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">2</span>
+        <h2>Start the app</h2>
+        <p>Open Gallery on your phone, allow access to all photos, then confirm with your fingerprint, face, or passcode. The server starts by itself.</p>
+        <p class="note">Your phone and computer must be on the <strong>same Wi-Fi</strong>.</p>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">3</span>
+        <h2>Open your gallery</h2>
+        <p>Paste the link shown in the app (or scan its QR code with your computer’s camera app).</p>
+        <form id="openForm" novalidate>
+          <label class="sr" for="link">Gallery link from the app</label>
+          <input id="link" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="http://192.168.1.23:8080/?t=…" aria-describedby="linkError">
+          <p class="error" id="linkError" role="alert" hidden>Paste the link shown in the app</p>
+          <button class="btn" type="submit">Open gallery</button>
+        </form>
+      </li>
+    </ol>
+
+    <footer>
+      <p>This page is only a doorway. Your photos never leave your phone and never touch this site. No tracking, no cookies.</p>
+    </footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
