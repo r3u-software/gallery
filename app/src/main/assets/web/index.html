@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Gallery</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#grid">Skip to photos</a>
+
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <h1>Gallery</h1>
+      <span class="count" id="count" aria-live="polite">Loading…</span>
+    </div>
+
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Filter photos" id="chips">
+        <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-filter="screenshots" aria-pressed="false">Screenshots</button>
+        <button type="button" class="chip" data-filter="large" aria-pressed="false">Large files <span class="chip-note">&gt; 5 MB</span></button>
+      </div>
+      <label class="select">
+        <span class="sr">Sort order</span>
+        <select id="sort">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </label>
+      <button type="button" class="btn ghost" id="selectAll">Select all</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="skeleton" class="skeleton" aria-hidden="true"></div>
+    <div id="grid" class="grid" role="grid" aria-label="Photos" aria-multiselectable="true"></div>
+    <div id="empty" class="empty" hidden>
+      <div class="empty-art" aria-hidden="true"></div>
+      <h2>No photos here</h2>
+      <p id="emptyText">Nothing matches this filter.</p>
+    </div>
+    <p id="loadingMore" class="loading-more" hidden>Loading more photos…</p>
+  </main>
+
+  <!-- Selection bar -->
+  <div class="selbar" id="selbar" aria-hidden="true">
+    <span class="selbar-count" id="selCount" aria-live="polite">0 selected</span>
+    <button type="button" class="btn" id="selDownload">Download</button>
+    <button type="button" class="btn danger" id="selTrash">Move to trash</button>
+    <button type="button" class="btn ghost" id="selClear">Clear</button>
+  </div>
+
+  <!-- Photo viewer -->
+  <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+    <div class="viewer-top">
+      <div class="v-title">
+        <span class="v-name" id="vName"></span>
+        <span class="v-pos" id="vPos"></span>
+      </div>
+      <div class="v-actions">
+        <button type="button" class="icon-btn" id="vZoomOut" aria-label="Zoom out" title="Zoom out (−)">−</button>
+        <span class="v-zoom" id="vZoom" aria-live="polite">100%</span>
+        <button type="button" class="icon-btn" id="vZoomIn" aria-label="Zoom in" title="Zoom in (+)">+</button>
+        <button type="button" class="btn ghost v-fit" id="vFit" title="Fit to screen (0)">Fit</button>
+        <a class="btn" id="vDownload" href="#" download>Download</a>
+        <button type="button" class="icon-btn" id="vClose" aria-label="Close viewer" title="Close (Esc)">✕</button>
+      </div>
+    </div>
+    <button type="button" class="nav prev" id="vPrev" aria-label="Previous photo" title="Previous (←)">‹</button>
+    <button type="button" class="nav next" id="vNext" aria-label="Next photo" title="Next (→)">›</button>
+    <div class="stage" id="vStage">
+      <img id="vImg" alt="" draggable="false">
+      <div class="v-spinner" id="vSpinner" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- Confirm trash -->
+  <dialog id="confirm" class="modal" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <h2 id="confirmTitle">Move to trash?</h2>
+      <p id="confirmText"></p>
+      <div class="modal-actions">
+        <button type="submit" value="cancel" class="btn ghost" id="confirmCancel">Cancel</button>
+        <button type="submit" value="ok" class="btn danger" id="confirmOk">Move to trash</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Waiting for the phone -->
+  <dialog id="waiting" class="modal" aria-labelledby="waitingTitle">
+    <div class="waiting-body">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 id="waitingTitle">Confirm on your phone</h2>
+      <p>Android is asking you to confirm moving <strong id="waitingCount"></strong> to the trash. If you don't see it, open the Gallery app.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="waitingStop">Stop waiting</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Session lost -->
+  <div class="overlay" id="expired" hidden>
+    <div class="overlay-card">
+      <h2>Session ended</h2>
+      <p>Open the link (or scan the QR code) shown in the Gallery app on your phone to continue. If the server was restarted, the link has changed.</p>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+  <iframe name="dlframe" title="downloads" hidden></iframe>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

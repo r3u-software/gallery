@@ -13,7 +13,7 @@ object PrivateNetwork {
         if (address.isNullOrBlank()) return false
         val clean = address.substringBefore('%').removePrefix("/")
         // Never resolve hostnames: only literal IPs are accepted.
-        val isV4Literal = clean.matches(Regex("^\d{1,3}(\.\d{1,3}){3}$"))
+        val isV4Literal = clean.matches(Regex("""^\d{1,3}(\.\d{1,3}){3}$"""))
         val isV6Literal = clean.contains(':') && clean.matches(Regex("^[0-9a-fA-F:.]+$"))
         if (!isV4Literal && !isV6Literal) return false
         val addr = try { InetAddress.getByName(clean) } catch (_: Exception) { return false }
