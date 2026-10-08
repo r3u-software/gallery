@@ -53,12 +53,12 @@ class NetworkTracker(context: Context, private val onChange: (String?) -> Unit) 
     }
 
     private fun publish() {
-        val ip: String?
-        synchronized(this) {
-            ip = ips.values.firstOrNull { it != null }
-            if (reported && ip == last) return
+        val ip = synchronized(this) {
+            val current = ips.values.firstOrNull { it != null }
+            if (reported && current == last) return
             reported = true
-            last = ip
+            last = current
+            current
         }
         onChange(ip)
     }
