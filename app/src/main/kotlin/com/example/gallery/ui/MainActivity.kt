@@ -158,7 +158,7 @@ class MainActivity : FragmentActivity() {
         )
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock Gallery")
+                .setTitle("Unlock R3U Gallery")
                 .setSubtitle("Confirm it’s you to start sharing your photos")
                 .setAllowedAuthenticators(authenticators)
                 .build(),

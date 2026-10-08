@@ -1,4 +1,4 @@
-# Gallery
+# R3U Gallery
 
 Browse your Android phone's photos from a desktop browser on the same Wi-Fi: zoom, download, and move unwanted photos to the trash. No USB, no developer options, no ADB, no cloud. The phone app runs a small web server and serves the web UI itself.
 

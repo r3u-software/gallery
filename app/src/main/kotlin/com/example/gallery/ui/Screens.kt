@@ -92,7 +92,7 @@ private fun StatusPill(text: String, color: Color) {
 @Composable
 fun PermissionScreen(onGrant: () -> Unit, onSettings: () -> Unit) = ScreenFrame {
     Title("Allow access to your photos")
-    Body("Gallery needs access to all your photos to show them on your computer. Choose “Allow all” when Android asks.")
+    Body("R3U Gallery needs access to all your photos to show them on your computer. Choose “Allow all” when Android asks.")
     Button(onClick = onGrant, modifier = Modifier.fillMaxWidth()) { Text("Allow photo access") }
     Spacer(Modifier.height(10.dp))
     OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Open app settings") }
@@ -101,14 +101,14 @@ fun PermissionScreen(onGrant: () -> Unit, onSettings: () -> Unit) = ScreenFrame 
 @Composable
 fun PartialAccessScreen(onSettings: () -> Unit) = ScreenFrame {
     Title("Full photo access is required")
-    Body("You allowed only some photos. Gallery can’t show your whole library that way. Open settings, tap Photos and videos, and choose “Allow all”.")
+    Body("You allowed only some photos. R3U Gallery can’t show your whole library that way. Open settings, tap Photos and videos, and choose “Allow all”.")
     Button(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Fix in settings") }
 }
 
 @Composable
 fun NoScreenLockScreen(onSettings: () -> Unit) = ScreenFrame {
     Title("Set a screen lock first")
-    Body("Gallery shares your photos over Wi-Fi, so it only runs on phones protected by a PIN, pattern, password, or fingerprint. Set one up, then come back.")
+    Body("R3U Gallery shares your photos over Wi-Fi, so it only runs on phones protected by a PIN, pattern, password, or fingerprint. Set one up, then come back.")
     Button(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Open security settings") }
 }
 

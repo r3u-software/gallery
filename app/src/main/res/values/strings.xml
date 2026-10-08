@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Gallery</string>
-    <string name="channel_server">Gallery server</string>
+    <string name="app_name">R3U Gallery</string>
+    <string name="channel_server">R3U Gallery server</string>
     <string name="channel_trash">Trash confirmations</string>
 </resources>
