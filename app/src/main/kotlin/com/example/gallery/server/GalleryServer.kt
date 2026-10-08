@@ -47,6 +47,7 @@ class GalleryServer(
 
     private fun route(session: IHTTPSession): Response {
         if (!clientAllowed(session.remoteIpAddress)) {
+            drainBody(session)
             return text(Status.FORBIDDEN, "Forbidden: this server only accepts devices on your local network.")
         }
         val uri = session.uri.substringBefore('?')
@@ -60,7 +61,10 @@ class GalleryServer(
             }
         }
 
-        if (!hasValidCookie(session)) return unauthorized()
+        if (!hasValidCookie(session)) {
+            drainBody(session)
+            return unauthorized()
+        }
 
         return if (uri.startsWith("/api/")) api(session, uri, method) else staticFile(uri, method)
     }
@@ -200,6 +204,13 @@ class GalleryServer(
 
     // ---------------------------------------------------------------- auth helpers
 
+    /** Reads and discards an unread request body so a keep-alive connection isn't left mid-request. */
+    private fun drainBody(session: IHTTPSession) {
+        if (session.method == Method.POST || session.method == Method.PUT) {
+            try { session.parseBody(HashMap()) } catch (_: Exception) {}
+        }
+    }
+
     private fun tokenMatches(supplied: String): Boolean = constantTimeEquals(supplied, token)
 
     private fun hasValidCookie(session: IHTTPSession): Boolean {
@@ -264,7 +275,7 @@ class GalleryServer(
 
         private const val UNAUTHORIZED_HTML =
             "<!doctype html><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\">" +
-                "<title>Gallery</title><body style=\"font-family:system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;" +
+                "<title>R3U Gallery</title><body style=\"font-family:system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;" +
                 "color:#222\"><h1>Open the link from the app</h1><p>This page needs the private link shown in the Gallery " +
                 "app on your phone. Open that link (or scan its QR code) to get in.</p></body>"
 

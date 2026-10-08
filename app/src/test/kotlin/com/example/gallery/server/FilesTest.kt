@@ -213,7 +213,7 @@ class FilesTest {
     @Test
     fun `unique names helper`() {
         assertEquals(
-            listOf("a.jpg", "a (1).jpg", "a (2).jpg", "noext", "noext (1)"),
+            listOf("a.jpg", "a (1).jpg", "A (2).JPG", "noext", "noext (1)"),
             ZipStreamer.uniqueNames(listOf("a.jpg", "a.jpg", "A.JPG", "noext", "noext")),
         )
         assertEquals(listOf("x_y.jpg"), ZipStreamer.uniqueNames(listOf("x/y.jpg")))

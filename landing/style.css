@@ -80,3 +80,10 @@ footer p { margin: 0 auto; max-width: 36em; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+:root { --accent-2: #8b5cf6; --grad: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+body { background: radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%), radial-gradient(800px 480px at 100% 0, color-mix(in srgb, var(--accent-2) 15%, transparent), transparent 55%), var(--bg); }
+.grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.btn { background: var(--grad); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent); }
+.card { background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 22px; }
+.num { background: var(--grad); color: #fff; }
