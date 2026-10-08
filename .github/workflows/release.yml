@@ -23,7 +23,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest ships the Android SDK; accept licenses so Gradle can fetch platform 35 / build-tools.
+      - name: Accept Android SDK licenses
+        run: |
+          sdkmanager=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin | sort -V | tail -n1)/sdkmanager
+          yes | "$sdkmanager" --licenses > /dev/null || true
 
       - uses: gradle/actions/setup-gradle@v4
         with:
