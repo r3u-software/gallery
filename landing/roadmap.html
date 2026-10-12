@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>R3U Gallery Roadmap</title>
+<meta name="description" content="What R3U Gallery does today and the five-phase plan toward full phone link in the browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="roadmap.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">R3U Suite · Mobile bridge</div>
+    <h1>From phone gallery to <em>full phone link</em></h1>
+    <p class="lead">What R3U Gallery does today, what Phone Link and AirDroid Web do, and the five phases that take Gallery from a photo viewer to remote phone access in the browser. Nothing past phase 0 is built yet.</p>
+    <div class="stats" aria-label="Summary">
+      <div class="stat"><b>v1.0.0</b><span>released, signed APK</span></div>
+      <div class="stat"><b>37</b><span>unit tests passing in CI</span></div>
+      <div class="stat"><b>5</b><span>phases, 0 to 4</span></div>
+      <div class="stat"><b id="featCount">0</b><span>features mapped</span></div>
+    </div>
+  </header>
+
+  <!-- WHAT EXISTS -->
+  <section id="built">
+    <div class="sec-head">
+      <h2>What exists today</h2>
+      <p>Three pieces, all live in the public repo and passing CI. The Android app has not been tested on a real phone yet.</p>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <span class="pill built">BUILT</span>
+        <h3>Android app</h3>
+        <ul>
+          <li><b>Permission gate:</b> needs “Allow all” photos; “Select photos” is refused</li>
+          <li><b>Unlock</b> with fingerprint, face or passcode on every launch; no screen lock, no server</li>
+          <li><b>Foreground service</b> runs a NanoHTTPD server on port 8080 to 8090</li>
+          <li><b>Running screen:</b> QR code, link, Copy link, Stop server</li>
+          <li>Follows Wi-Fi changes; stops if access is revoked</li>
+          <li><b>Trash</b> through Android’s own confirmation dialog</li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="pill built">BUILT</span>
+        <h3>Web gallery (served by the phone)</h3>
+        <ul>
+          <li><b>Virtualized grid</b> for 10,000+ photos, grouped by day</li>
+          <li><b>Filters:</b> All, Screenshots, Large files over 5 MB; sort newest or oldest</li>
+          <li><b>Selection</b> with shift-range, per-day select, select all</li>
+          <li><b>Viewer:</b> zoom 50% to 400%, pan, pinch, swipe, keyboard</li>
+          <li><b>Download</b> one file, or many as a streamed zip</li>
+          <li><b>Move to trash</b> with “Confirm on your phone” waiting state</li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="pill built">BUILT</span>
+        <h3>Landing page &amp; releases</h3>
+        <ul>
+          <li><b>GitHub Pages</b> page with Download APK and an “Open gallery” box</li>
+          <li>Link check: only private IPv4 with a port</li>
+          <li><b>Signed release</b> built by CI on every <span class="mono">v*</span> tag</li>
+          <li>Stable URL: <span class="mono">…/releases/latest/download/gallery.apk</span></li>
+          <li>Security: random token per start, HttpOnly SameSite cookie, private-IP clients only</li>
+        </ul>
+        <div class="link">r3u-software.github.io/gallery</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- PHASES -->
+  <section id="phases">
+    <div class="sec-head">
+      <h2>Five phases</h2>
+      <p>Each phase ships on its own. Select a phase to filter the feature map below.</p>
+    </div>
+    <div class="spine" id="spine"></div>
+    <p class="hint">Phase 1 needs no server of ours. The first cloud cost appears in phase 2.</p>
+  </section>
+
+  <!-- MATRIX -->
+  <section id="features">
+    <div class="sec-head">
+      <h2>Feature map</h2>
+      <p>R3U Gallery’s target phase for each feature, next to Phone Link and AirDroid Web.</p>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by phase"></div>
+    <div class="table-wrap" role="region" aria-label="Feature comparison table" tabindex="0">
+      <table>
+        <thead>
+          <tr><th>Feature</th><th>Phone Link</th><th>AirDroid Web</th><th>R3U Gallery</th><th>Target</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="note">Phone Link and AirDroid columns come from general knowledge of those products, not a fresh check. Dashed circles mean unsure. Plans and limits change, so verify before relying on them.</p>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="sec-head">
+      <h2>How it is wired</h2>
+      <p>Today the browser talks straight to the phone. Anywhere access adds a small cloud service that introduces the two, and photos still never sit on a server.</p>
+    </div>
+    <div class="arch">
+      <figure class="fig">
+        <span class="pill built">PHASE 0 AND 1 · SAME WI-FI</span>
+        <h3>Direct, on your network</h3>
+        <p class="cap">No account, no cloud. The landing page is only a doorway that opens the phone’s address.</p>
+        <div class="svgscroll">
+        <svg viewBox="0 0 640 270" role="img" aria-label="Browser connects directly to the phone over Wi-Fi. The GitHub Pages landing page only links to the phone.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="head"/></marker>
+            <marker id="aha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="head-a"/></marker>
+          </defs>
+          <!-- phone -->
+          <rect class="box" x="20" y="60" width="230" height="190" rx="14"/>
+          <text class="t-strong" x="36" y="86">Android phone</text>
+          <text class="mono" x="36" y="102">R3U Gallery app</text>
+          <rect class="box-built" x="36" y="116" width="198" height="40" rx="8"/>
+          <text x="48" y="140">HTTP server · token + cookie</text>
+          <rect class="box-plan" x="36" y="164" width="198" height="34" rx="8"/>
+          <text x="48" y="186">Notifications · SMS · files (P1)</text>
+          <rect class="box-built" x="36" y="206" width="198" height="34" rx="8"/>
+          <text x="48" y="228">MediaStore photos · trash dialog</text>
+          <!-- browser -->
+          <rect class="box" x="390" y="60" width="230" height="190" rx="14"/>
+          <text class="t-strong" x="406" y="86">Computer browser</text>
+          <text class="mono" x="406" y="102">any OS, no install</text>
+          <rect class="box-built" x="406" y="116" width="198" height="40" rx="8"/>
+          <text x="418" y="140">Web gallery (from the phone)</text>
+          <rect class="box-plan" x="406" y="164" width="198" height="76" rx="8"/>
+          <text x="418" y="186">Dashboard tabs (P1)</text>
+          <text class="mono" x="418" y="204">Photos · Notifications</text>
+          <text class="mono" x="418" y="220">Messages · Files · Status</text>
+          <!-- link -->
+          <path class="ln" d="M250 136 H390" marker-start="url(#ah)" marker-end="url(#ah)"/>
+          <text class="mono" x="320" y="124" text-anchor="middle">HTTP</text>
+          <text class="mono" x="320" y="156" text-anchor="middle">same Wi-Fi</text>
+          <!-- pages -->
+          <rect class="box-acc" x="215" y="8" width="210" height="34" rx="8"/>
+          <text x="320" y="30" text-anchor="middle">GitHub Pages · landing</text>
+          <path class="ln-m" d="M405 42 L470 60" marker-end="url(#ah)"/>
+          <text class="mono" x="476" y="48">opens the link</text>
+        </svg>
+        </div>
+      </figure>
+
+      <figure class="fig">
+        <span class="pill plan">PHASE 2 AND 3 · ANYWHERE</span>
+        <h3>Introduced by the cloud, then direct</h3>
+        <p class="cap">The service handles accounts, nicknames and presence. Data goes peer to peer, encrypted end to end, with a relay as fallback.</p>
+        <div class="svgscroll">
+        <svg viewBox="0 0 640 330" role="img" aria-label="Phone and browser sign in to a cloud registry, then connect by encrypted WebRTC, with a TURN relay as fallback.">
+          <defs>
+            <marker id="bh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="head"/></marker>
+            <marker id="bha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="head-a"/></marker>
+          </defs>
+          <!-- cloud -->
+          <rect class="box-plan" x="190" y="8" width="260" height="82" rx="12"/>
+          <text class="t-strong" x="320" y="32" text-anchor="middle">Cloud registry + signaling</text>
+          <text class="mono" x="320" y="50" text-anchor="middle">accounts · nicknames · presence</text>
+          <text class="mono" x="320" y="66" text-anchor="middle">passcode lockouts · revoke</text>
+          <text class="mono" x="320" y="82" text-anchor="middle">sees metadata, never photos</text>
+          <!-- phone -->
+          <rect class="box" x="14" y="150" width="200" height="130" rx="14"/>
+          <text class="t-strong" x="30" y="176">Android phone</text>
+          <text class="mono" x="30" y="192">outbound only</text>
+          <rect class="box-built" x="30" y="204" width="168" height="30" rx="8"/>
+          <text x="42" y="224">Gallery (built)</text>
+          <rect class="box-plan" x="30" y="240" width="168" height="30" rx="8"/>
+          <text x="42" y="260">Link + mirror (P1 to P4)</text>
+          <!-- browser -->
+          <rect class="box" x="426" y="150" width="200" height="130" rx="14"/>
+          <text class="t-strong" x="442" y="176">Any browser</text>
+          <text class="mono" x="442" y="192">another city, any network</text>
+          <rect class="box-plan" x="442" y="204" width="168" height="30" rx="8"/>
+          <text x="454" y="224">Dashboard</text>
+          <rect class="box-plan" x="442" y="240" width="168" height="30" rx="8"/>
+          <text x="454" y="260">Channel list + passcode</text>
+          <!-- signaling lines -->
+          <path class="ln" d="M110 150 L210 90" marker-end="url(#bh)"/>
+          <text class="mono" x="40" y="118">heartbeat</text>
+          <path class="ln" d="M530 150 L430 90" marker-end="url(#bh)"/>
+          <text class="mono" x="520" y="118">sign in</text>
+          <!-- p2p -->
+          <path class="ln-d" d="M214 208 H426" marker-start="url(#bha)" marker-end="url(#bha)"/>
+          <text class="mono acc-text" x="320" y="198" text-anchor="middle">WebRTC · end-to-end encrypted</text>
+          <!-- turn -->
+          <rect class="box" x="250" y="288" width="140" height="34" rx="8"/>
+          <text x="320" y="310" text-anchor="middle">TURN relay (fallback)</text>
+          <path class="ln-m" d="M214 262 Q 240 305 250 305"/>
+          <path class="ln-m" d="M426 262 Q 400 305 390 305"/>
+        </svg>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- SECURITY -->
+  <section id="security">
+    <div class="sec-head">
+      <h2>Security grows with the reach</h2>
+      <p>Messages and notifications are more sensitive than photos, and the internet is bigger than your Wi-Fi.</p>
+    </div>
+    <div class="layers">
+      <div class="layer"><div class="ph">NOW</div><p><b>Random token per start.</b> HttpOnly, SameSite=Strict cookie. Only private-IP clients are accepted. Unlock required to start. Traffic is plain HTTP on your LAN.</p></div>
+      <div class="layer"><div class="ph">PHASE 1</div><p><b>App passcode with lockout</b> after a few wrong tries, plus a switch per feature (photos, notifications, SMS, files). Sensitive tabs stay locked until the passcode is entered. The passcode still travels over plain HTTP on the LAN.</p></div>
+      <div class="layer"><div class="ph">PHASE 2</div><p><b>Accounts and pairing.</b> First connection from a new browser needs approval on the phone. Revoke any browser from the app. The registry never stores photos, cookies or the passcode.</p></div>
+      <div class="layer"><div class="ph">PHASE 3</div><p><b>End-to-end encryption</b> between phone and browser, keys set at pairing. Rate limits, an alert on every new connection, and a Wi-Fi-only option to protect mobile data.</p></div>
+      <div class="layer"><div class="ph">PHASE 4</div><p><b>Screen control permissions.</b> The Accessibility service is switched on only when you start a session. A visible banner shows while the screen is shared.</p></div>
+    </div>
+  </section>
+
+  <!-- DECISIONS -->
+  <section id="decisions">
+    <div class="sec-head">
+      <h2>Decisions before building</h2>
+      <p>Recommended choices are highlighted.</p>
+    </div>
+    <div class="decisions">
+      <article class="card">
+        <h3>Where to start</h3>
+        <div class="opts">
+          <div class="opt rec"><b>Phase 1, no cloud</b> · Phone Link tier on the same Wi-Fi; decide on a backend after real use</div>
+          <div class="opt">Phase 2 first · Accounts and channel list before new features</div>
+        </div>
+      </article>
+      <article class="card">
+        <h3>How to distribute</h3>
+        <div class="opts">
+          <div class="opt rec"><b>Sideload only</b> · Keeps SMS and notification access</div>
+          <div class="opt">Plan for Play Store later · Blocks most SMS and notification use</div>
+        </div>
+      </article>
+      <article class="card">
+        <h3>Backend for phase 2 and 3</h3>
+        <div class="opts">
+          <div class="opt rec"><b>Cloudflare Workers</b> · Small, fast, fits a presence list</div>
+          <div class="opt">Supabase · Accounts included, heavier than needed</div>
+          <div class="opt">Apps Script + Sheet · Matches the TK Dashboard stack, slower</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <footer>Source of truth: the <span class="mono">Projects/gallery</span> repo. Phases 1 to 4 are a proposal, not built code.</footer>
+</div>
+<script src="roadmap.js"></script>
+</body>
+</html>
