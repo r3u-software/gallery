@@ -136,6 +136,9 @@ class GalleryService : Service() {
     private fun publishRunning() {
         val address = ip ?: return
         ServerStateHolder.state = ServerState.Running("http://$address:$port/?t=$token", address, port)
+        if (com.example.gallery.BuildConfig.DEBUG) {
+            android.util.Log.i("R3U_E2E", "LINK port=$port token=$token") // used by the emulator smoke test only
+        }
         updateNotification("Open $address:$port on your computer")
     }
 

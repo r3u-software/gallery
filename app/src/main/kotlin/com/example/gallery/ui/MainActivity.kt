@@ -73,10 +73,23 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         passcode = PasscodeStore(this)
         features = FeaturePrefs(this)
+        applyE2eHooks()
         enableEdgeToEdge()
         setContent {
             GalleryTheme { Root() }
         }
+    }
+
+    /**
+     * Debug builds only (BuildConfig.DEBUG is false in releases): lets the emulator smoke test skip the
+     * biometric prompt, set the web passcode and switch every feature on, through intent extras.
+     */
+    private fun applyE2eHooks() {
+        if (!com.example.gallery.BuildConfig.DEBUG) return
+        val code = intent.getStringExtra("e2e_passcode") ?: return
+        passcode.set(code)
+        Feature.values().forEach { features.set(it, true) }
+        vm.authenticated = true
     }
 
     override fun onResume() {
