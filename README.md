@@ -107,6 +107,16 @@ bash tools/rename-package.sh com.yourcompany.gallery
 
 It updates `namespace` and `applicationId` in `app/build.gradle.kts`, rewrites package/imports and moves the source folders.
 
+## Phase 1: phone dashboard (v1.1.0)
+
+Beyond photos, the web page now has tabs for **Notifications, Messages, Files and Phone** (status + Find my phone). Plan and assumptions: [docs/PHASE-1-PLAN.md](docs/PHASE-1-PLAN.md).
+
+- **Web passcode.** After unlock the app asks you to set a passcode (6+ characters). The browser must enter it; 5 wrong tries lock that client out (30 s, doubling to 15 min). Only a salted hash is stored.
+- **Per-feature switches** (app: *Features and passcode*). Photos and Phone status start on; Notifications, Messages, Files and Find phone are off until you enable them, and the server refuses them while off. Enabling Notifications sends you to Android's *Notification access*; Messages asks for SMS and contacts permission.
+- **Files and clipboard.** Drag files to the Files tab to put them on the phone (`Download/R3U Gallery`). To go the other way, share a file or text from any app to **R3U Gallery**; it appears in the Files tab.
+- **Known limits.** Android records sent texts only for the default SMS app, so replies you send from the browser appear in the open conversation but may not be in the history later. The passcode and content travel over plain HTTP on your Wi-Fi.
+- **Emulator tests.** `emulator.yml` boots Android 11, 13 and 14 emulators in CI and exercises the real server end to end (`tools/e2e/smoke.sh`).
+
 ## How it behaves
 
 - **Start flow:** photo permission ("Allow all") → biometric / device-credential prompt → server starts. The prompt appears on every fresh app launch. No screen lock set → the server never starts and the app asks you to set one. Partial photo access ("Select photos") → a screen explains full access is needed.

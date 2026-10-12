@@ -51,6 +51,22 @@ Desktop: any current Chrome / Edge / Firefox / Safari on the same Wi-Fi.
 | **Doze / screen off** | Lock the phone for 10 minutes | Gallery still reachable (foreground service + Wi-Fi lock) | 13 / 14 |
 | **Update over old version** | Install release v1, then v2 (same signature) | Installs over the top; settings intact | any |
 
+## Phase 1 checks (v1.1.0)
+
+| Scenario | Steps | Expected |
+|---|---|---|
+| **Set passcode** | After the unlock prompt on a fresh install | "Set a web passcode" screen; 6+ characters; then the Running screen |
+| **Lock screen** | Open the link in a browser | Passcode box; wrong code shows attempts left; 5 wrong codes lock for 30 s |
+| **Feature switches** | App: Features and passcode; switch Messages off | Browser Messages tab is disabled; API answers 403 |
+| **Notifications** | Switch on, grant Notification access, receive a message | It appears in the Notifications tab within ~4 s; Dismiss clears it on the phone; Reply works for chat apps |
+| **Messages** | Switch on, allow SMS and contacts | Threads with contact names; send a text; the recipient receives it |
+| **Files in** | Drag a file onto the Files tab | Toast; file appears in `Download/R3U Gallery` on the phone |
+| **Files out** | Share a file to R3U Gallery from another app | Appears in the Files tab; Download works |
+| **Clipboard** | Share text to R3U Gallery; type text in the browser and send | Text appears in the browser; browser text pastes on the phone |
+| **Find my phone** | Press Ring phone (Files off is fine) | Phone rings at full volume; Stop ringing works; stops after 60 s |
+| **Phone status** | Open the Phone tab | Battery, charging state, storage match the phone |
+| **Change passcode** | App: Change web passcode | Old passcode no longer works after the server restarts a session |
+
 ## Automated checks to run first
 
 ```bash

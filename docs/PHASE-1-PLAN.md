@@ -1,6 +1,6 @@
 # Phase 1 plan: Phone Link tier (same Wi-Fi, no cloud)
 
-Status: approved by "go for all phases" (2026-10-12). Built autonomously; real-phone check pending.
+Status: BUILT and tested on Android 11, 13 and 14 emulators in CI (2026-10-12). Real-phone check pending.
 
 ## Scope
 

@@ -122,14 +122,23 @@ curl -s -b "$JAR" -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api
 ok "clipboard and find phone"
 
 # --- notifications ---
-adb shell cmd notification post -S bigtext -t "E2E title" r3u-e2e "Body from the emulator" >/dev/null || true
-FOUND=""
-for i in $(seq 1 10); do
-  N=$(curl -s -b "$JAR" "$BASE/api/notifications")
-  if echo "$N" | grep -q "Body from the emulator"; then FOUND=1; break; fi
+adb shell cmd notification post -S bigtext -t "E2E" r3u-e2e "Body from the emulator" >/dev/null || true
+N=""
+for i in $(seq 1 15); do
+  N=$(curl -s -b "$JAR" "$BASE/api/notifications" || true)
+  echo "$N" | grep -q "r3u-e2e" && break
   sleep 1
 done
-if [ -n "$FOUND" ]; then ok "notification mirrored"; else echo "WARN notifications: $N"; fi
+echo "$N" | grep -q '"connected":true' || fail "notification listener not connected: $N"
+echo "$N" | grep -q "r3u-e2e" || fail "notification not mirrored: $N"
+ok "notification mirrored"
+NKEY=$(echo "$N" | grep -o '"key":"[^"]*r3u-e2e[^"]*"' | head -1 | sed -E 's/"key":"(.*)"//' || true)
+if [ -n "$NKEY" ]; then
+  curl -s -b "$JAR" -X POST -H 'Content-Type: application/json' -d "{\"key\":\"$NKEY\"}" "$BASE/api/notifications/dismiss" >/dev/null
+  sleep 2
+  if curl -s -b "$JAR" "$BASE/api/notifications" | grep -q "r3u-e2e"; then fail "notification not dismissed"; fi
+  ok "notification dismissed from the browser"
+fi
 
 # --- sms (emulator console) ---
 adb emu sms send 5551234 "hello from e2e" >/dev/null 2>&1 || true
