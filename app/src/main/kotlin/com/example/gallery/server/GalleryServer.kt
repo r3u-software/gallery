@@ -504,9 +504,9 @@ class GalleryServer(
         private const val MAX_TEXT = 4_000
         private const val MAX_SMS = 1_000
         private const val MAX_CLIPBOARD = 100_000
-        private val SMS_THREAD = Regex("^/api/sms/threads/(\d{1,18})$")
-        private val FILE_ROUTE = Regex("^/api/files/(\d{1,18})(/download)?$")
-        private val PHONE_NUMBER = Regex("^[+0-9 ()\-]{3,24}$")
+        private val SMS_THREAD = Regex("""^/api/sms/threads/(\d{1,18})$""")
+        private val FILE_ROUTE = Regex("""^/api/files/(\d{1,18})(/download)?$""")
+        private val PHONE_NUMBER = Regex("""^[+0-9 ()\-]{3,24}$""")
 
         private val LOCKED = object : Response.IStatus {
             override fun getRequestStatus(): Int = 423
@@ -524,7 +524,7 @@ class GalleryServer(
         }
 
         fun cleanFileName(raw: String): String {
-            val base = raw.substringAfterLast('/').substringAfterLast('\')
+            val base = raw.substringAfterLast('/').substringAfterLast('\\')
             val safe = base.map { if (it.code < 32 || it in "<>:\"|?*") '_' else it }.joinToString("").trim().trim('.')
             return safe.take(120).ifBlank { "file" }
         }
