@@ -134,9 +134,16 @@ echo "$N" | grep -q "r3u-e2e" || fail "notification not mirrored: $N"
 ok "notification mirrored"
 NKEY=$(echo "$N" | grep -o '"key":"[^"]*r3u-e2e[^"]*"' | head -1 | sed -E 's/"key":"(.*)"//' || true)
 if [ -n "$NKEY" ]; then
-  curl -s -b "$JAR" -X POST -H 'Content-Type: application/json' -d "{\"key\":\"$NKEY\"}" "$BASE/api/notifications/dismiss" >/dev/null
-  sleep 2
-  if curl -s -b "$JAR" "$BASE/api/notifications" | grep -q "r3u-e2e"; then fail "notification not dismissed"; fi
+  echo "dismissing key: $NKEY"
+  DISMISS=$(curl -s -w ' [%{http_code}]' -b "$JAR" -X POST -H 'Content-Type: application/json' -d "{\"key\":\"$NKEY\"}" "$BASE/api/notifications/dismiss" || true)
+  echo "dismiss response: $DISMISS"
+  GONE=""
+  for i in $(seq 1 10); do
+    sleep 1
+    AFTER=$(curl -s -b "$JAR" "$BASE/api/notifications" || true)
+    if ! echo "$AFTER" | grep -q "r3u-e2e"; then GONE=1; break; fi
+  done
+  [ -n "$GONE" ] || { adb shell dumpsys notification --noredact | grep -i "r3u-e2e" | head -5 || true; fail "notification not dismissed: $AFTER"; }
   ok "notification dismissed from the browser"
 fi
 
