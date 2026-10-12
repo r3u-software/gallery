@@ -71,6 +71,7 @@ class GalleryServer(
     }
 
     private fun api(session: IHTTPSession, uri: String, method: Method): Response {
+        drainBody(session) // consume any request body up front; handlers reuse the parsed result
         // Session / login endpoints work with the token cookie alone.
         if (uri == "/api/session" && method == Method.GET) return sessionInfo(session)
         if (uri == "/api/login" && method == Method.POST) return login(session)
@@ -386,12 +387,7 @@ class GalleryServer(
 
     private fun uploadFiles(session: IHTTPSession): Response {
         val p = services.files ?: return unavailable()
-        val temp = HashMap<String, String>()
-        try {
-            session.parseBody(temp)
-        } catch (e: Exception) {
-            return json(Status.BAD_REQUEST, "{\"error\":\"bad upload\"}")
-        }
+        val temp = parsed(session).files
         val saved = ArrayList<SharedFile>()
         try {
             for ((field, path) in temp) {
@@ -428,9 +424,7 @@ class GalleryServer(
 
     /** Reads and discards an unread request body so a keep-alive connection isn't left mid-request. */
     private fun drainBody(session: IHTTPSession) {
-        if (session.method == Method.POST || session.method == Method.PUT) {
-            try { session.parseBody(HashMap()) } catch (_: Exception) {}
-        }
+        if (session.method == Method.POST || session.method == Method.PUT) parsed(session)
     }
 
     private fun tokenMatches(supplied: String): Boolean = constantTimeEquals(supplied, token)
@@ -467,21 +461,29 @@ class GalleryServer(
 
     // ---------------------------------------------------------------- request/response helpers
 
-    /** The raw request body (JSON), or null. Must be called at most once per request. */
-    private fun readRaw(session: IHTTPSession): String? {
+    private class Parsed(val raw: String?, val files: Map<String, String>)
+
+    // NanoHTTPD can parse a request body only once, so every handler shares this one parse per request.
+    private val parsedBodies = java.util.Collections.synchronizedMap(java.util.WeakHashMap<IHTTPSession, Parsed>())
+
+    private fun parsed(session: IHTTPSession): Parsed {
+        parsedBodies[session]?.let { return it }
         val files = HashMap<String, String>()
-        return try {
+        val result = try {
             session.parseBody(files)
-            files["postData"]
+            Parsed(files["postData"], files)
         } catch (_: Exception) {
-            null
+            Parsed(null, files)
         }
+        parsedBodies[session] = result
+        return result
     }
 
+    /** The raw request body (JSON), or null. Safe to call any number of times. */
+    private fun readRaw(session: IHTTPSession): String? = parsed(session).raw
+
     private fun readIds(session: IHTTPSession): List<Long> {
-        val files = HashMap<String, String>()
-        session.parseBody(files)
-        val raw = files["postData"] ?: session.parameters["ids"]?.joinToString(",")
+        val raw = parsed(session).raw ?: session.parameters["ids"]?.joinToString(",")
         return Json.parseIds(raw)
     }
 
