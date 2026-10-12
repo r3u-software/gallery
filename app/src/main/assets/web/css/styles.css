@@ -422,3 +422,9 @@ body {
   .convo { min-height: 380px; }
   .bubble { max-width: 90%; }
 }
+
+/* Messages list: long snippets must never create a horizontal scrollbar */
+.threads { overflow-x: hidden; }
+.thread { width: 100%; min-width: 0; }
+.thread-top, .thread-snip { min-width: 0; }
+.thread-top strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
