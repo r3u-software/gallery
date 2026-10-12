@@ -48,6 +48,7 @@ class TestServer(
     val trash: FakeTrash = FakeTrash(),
     allowed: (String?) -> Boolean = { true },
     assets: AssetProvider = MapAssets(mapOf("index.html" to "<h1>hi</h1>", "js/app.js" to "console.log(1)")),
+    services: Services = Services(),
 ) {
     val catalog = PhotoCatalog { photos }
     val server = GalleryServer(
@@ -60,6 +61,7 @@ class TestServer(
         zipStreamer = ZipStreamer(Executors.newCachedThreadPool { r -> Thread(r).apply { isDaemon = true } }),
         clientAllowed = allowed,
         today = { Date(1_767_225_600_000L) }, // 2026-01-01 UTC
+        services = services,
     )
 
     init {
@@ -74,6 +76,12 @@ class TestServer(
 
     fun post(path: String, body: String, contentType: String = "application/json", cookie: Boolean = true) =
         request("POST", path, body, contentType, cookie, emptyMap())
+
+    /** Request with an explicit Cookie header (e.g. both session and unlock cookies). */
+    fun send(method: String, path: String, cookieHeader: String?, body: String? = null, contentType: String = "application/json") =
+        request(method, path, body, contentType, false, if (cookieHeader == null) emptyMap() else mapOf("Cookie" to cookieHeader))
+
+    val sessionCookie: String get() = "${GalleryServer.COOKIE_NAME}=$TEST_TOKEN"
 
     private fun request(
         method: String, path: String, body: String?, contentType: String?, cookie: Boolean, headers: Map<String, String>,

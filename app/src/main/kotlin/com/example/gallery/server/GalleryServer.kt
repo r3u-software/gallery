@@ -33,6 +33,7 @@ class GalleryServer(
     private val zipStreamer: ZipStreamer = ZipStreamer(Executors.newCachedThreadPool()),
     private val clientAllowed: (String?) -> Boolean = PrivateNetwork::isPrivate,
     private val today: () -> Date = { Date() },
+    private val services: Services = Services(),
 ) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
@@ -70,6 +71,27 @@ class GalleryServer(
     }
 
     private fun api(session: IHTTPSession, uri: String, method: Method): Response {
+        // Session / login endpoints work with the token cookie alone.
+        if (uri == "/api/session" && method == Method.GET) return sessionInfo(session)
+        if (uri == "/api/login" && method == Method.POST) return login(session)
+        if (uri == "/api/logout" && method == Method.POST) {
+            drainBody(session)
+            return logout()
+        }
+
+        // Passcode gate: 423 (not 401) so the web UI shows its lock screen instead of "session ended".
+        if (passcodeRequired() && !hasUnlockCookie(session)) {
+            drainBody(session)
+            return json(LOCKED, "{\"error\":\"locked\"}")
+        }
+        featureFor(uri)?.let { feature ->
+            if (!services.features.isEnabled(feature)) {
+                drainBody(session)
+                return json(Status.FORBIDDEN, "{\"error\":\"feature_disabled\",\"feature\":${Json.str(feature.key)}}")
+            }
+        }
+        deviceApi(session, uri, method)?.let { return it }
+
         if (uri == "/api/photos" && method == Method.GET) return listPhotos(session)
 
         PHOTO_ROUTE.matchEntire(uri)?.let { m ->
@@ -187,6 +209,206 @@ class GalleryServer(
         }
     }
 
+    // ---------------------------------------------------------------- Phase 1: session, passcode, features
+
+    private val unlockToken: String = newRandomToken()
+    private val limiter = LoginLimiter()
+
+    private fun passcodeRequired(): Boolean = services.passcode?.required == true
+
+    private fun sessionInfo(session: IHTTPSession): Response {
+        val flags = Feature.values().associate { it.key to services.features.isEnabled(it) }
+        val unlocked = !passcodeRequired() || hasUnlockCookie(session)
+        return json(Status.OK, Json.session(passcodeRequired(), unlocked, services.deviceName(), flags))
+    }
+
+    private fun login(session: IHTTPSession): Response {
+        val ip = session.remoteIpAddress ?: "unknown"
+        val raw = readRaw(session)
+        val verifier = services.passcode
+        if (verifier == null || !verifier.required) return unlockedResponse()
+
+        val wait = limiter.retryAfterMs(ip)
+        if (wait > 0) return lockedOut(wait)
+
+        val code = JsonFields.string(raw, "passcode").orEmpty()
+        if (verifier.verify(code)) {
+            limiter.recordSuccess(ip)
+            return unlockedResponse()
+        }
+        limiter.recordFailure(ip)
+        val after = limiter.retryAfterMs(ip)
+        if (after > 0) return lockedOut(after)
+        return json(Status.FORBIDDEN, "{\"error\":\"wrong_passcode\",\"attemptsLeft\":${limiter.attemptsLeft(ip)}}")
+    }
+
+    private fun lockedOut(waitMs: Long): Response {
+        val secs = (waitMs + 999) / 1000
+        return newFixedLengthResponse(TOO_MANY, "application/json; charset=utf-8", "{\"error\":\"locked_out\",\"retryAfterSec\":$secs}").apply {
+            addHeader("Retry-After", secs.toString())
+            addHeader("Cache-Control", "no-store")
+        }
+    }
+
+    private fun unlockedResponse(): Response =
+        json(Status.OK, "{\"ok\":true}").apply {
+            addHeader("Set-Cookie", "$UNLOCK_COOKIE=$unlockToken; Path=/; HttpOnly; SameSite=Strict")
+        }
+
+    private fun logout(): Response =
+        json(Status.OK, "{\"ok\":true}").apply {
+            addHeader("Set-Cookie", "$UNLOCK_COOKIE=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0")
+        }
+
+    private fun hasUnlockCookie(session: IHTTPSession): Boolean =
+        cookieValue(session, UNLOCK_COOKIE)?.let { constantTimeEquals(it, unlockToken) } == true
+
+    private fun featureFor(uri: String): Feature? = when {
+        uri == "/api/photos" || uri.startsWith("/api/photos/") || uri == "/api/download" || uri.startsWith("/api/trash") -> Feature.PHOTOS
+        uri.startsWith("/api/notifications") -> Feature.NOTIFICATIONS
+        uri.startsWith("/api/sms") -> Feature.MESSAGES
+        uri.startsWith("/api/files") || uri.startsWith("/api/clipboard") -> Feature.FILES
+        uri == "/api/status" -> Feature.STATUS
+        uri.startsWith("/api/find") -> Feature.FIND
+        else -> null
+    }
+
+    private fun unavailable(): Response = json(Status.NOT_FOUND, "{\"error\":\"unavailable\"}")
+
+    // ---------------------------------------------------------------- Phase 1: device features
+
+    private fun deviceApi(session: IHTTPSession, uri: String, method: Method): Response? {
+        if (uri == "/api/status" && method == Method.GET) {
+            val p = services.status ?: return unavailable()
+            return json(Status.OK, Json.status(p.status()))
+        }
+
+        // notifications
+        if (uri == "/api/notifications" && method == Method.GET) {
+            val p = services.notifications ?: return unavailable()
+            return json(Status.OK, Json.notifications(p.isConnected(), if (p.isConnected()) p.list() else emptyList()))
+        }
+        if (uri == "/api/notifications/dismiss" && method == Method.POST) {
+            val p = services.notifications ?: return unavailable()
+            val key = JsonFields.string(readRaw(session), "key") ?: return json(Status.BAD_REQUEST, "{\"error\":\"key required\"}")
+            return json(if (p.dismiss(key)) Status.OK else Status.NOT_FOUND, "{\"ok\":${p.isConnected()}}")
+        }
+        if (uri == "/api/notifications/reply" && method == Method.POST) {
+            val p = services.notifications ?: return unavailable()
+            val raw = readRaw(session)
+            val key = JsonFields.string(raw, "key")
+            val text = JsonFields.string(raw, "text")
+            if (key.isNullOrEmpty() || text.isNullOrBlank() || text.length > MAX_TEXT) {
+                return json(Status.BAD_REQUEST, "{\"error\":\"key and text required\"}")
+            }
+            return if (p.reply(key, text)) json(Status.OK, "{\"ok\":true}") else json(Status.NOT_FOUND, "{\"error\":\"cannot reply\"}")
+        }
+
+        // messages
+        if (uri == "/api/sms/threads" && method == Method.GET) {
+            val p = services.messages ?: return unavailable()
+            val ok = p.hasPermission()
+            return json(Status.OK, Json.threads(ok, if (ok) p.threads() else emptyList()))
+        }
+        SMS_THREAD.matchEntire(uri)?.let { m ->
+            if (method != Method.GET) return text(Status.METHOD_NOT_ALLOWED, "Method not allowed")
+            val p = services.messages ?: return unavailable()
+            if (!p.hasPermission()) return json(Status.FORBIDDEN, "{\"error\":\"sms_permission\"}")
+            val limit = session.parameters["limit"]?.firstOrNull()?.toIntOrNull()?.coerceIn(1, 500) ?: 100
+            return json(Status.OK, Json.messages(p.messages(m.groupValues[1].toLong(), limit)))
+        }
+        if (uri == "/api/sms/send" && method == Method.POST) {
+            val p = services.messages ?: return unavailable()
+            if (!p.hasPermission()) return json(Status.FORBIDDEN, "{\"error\":\"sms_permission\"}")
+            val raw = readRaw(session)
+            val to = JsonFields.string(raw, "to")?.trim()
+            val body = JsonFields.string(raw, "body")
+            if (to == null || !PHONE_NUMBER.matches(to) || body.isNullOrBlank() || body.length > MAX_SMS) {
+                return json(Status.BAD_REQUEST, "{\"error\":\"valid number and body required\"}")
+            }
+            return if (p.send(to, body)) json(Status.OK, "{\"ok\":true}") else json(Status.INTERNAL_ERROR, "{\"error\":\"send failed\"}")
+        }
+
+        // files
+        if (uri == "/api/files" && method == Method.GET) {
+            val p = services.files ?: return unavailable()
+            return json(Status.OK, Json.files(p.list()))
+        }
+        if (uri == "/api/files/upload" && method == Method.POST) return uploadFiles(session)
+        FILE_ROUTE.matchEntire(uri)?.let { m ->
+            val p = services.files ?: return unavailable()
+            val id = m.groupValues[1].toLong()
+            val file = p.find(id) ?: return notFound()
+            return when {
+                m.groupValues[2] == "/download" && method == Method.GET -> {
+                    val ins = p.open(id) ?: return notFound()
+                    newFixedLengthResponse(Status.OK, file.mime.ifBlank { "application/octet-stream" }, ins, file.size).apply {
+                        addHeader("Content-Disposition", contentDisposition(file.name))
+                        addHeader("Cache-Control", "private, no-store")
+                    }
+                }
+                m.groupValues[2].isEmpty() && method == Method.DELETE ->
+                    json(if (p.delete(id)) Status.OK else Status.INTERNAL_ERROR, "{\"ok\":true}")
+                else -> text(Status.METHOD_NOT_ALLOWED, "Method not allowed")
+            }
+        }
+
+        // clipboard
+        if (uri == "/api/clipboard" && method == Method.GET) {
+            val p = services.clipboard ?: return unavailable()
+            return json(Status.OK, Json.clipboard(p.latest()))
+        }
+        if (uri == "/api/clipboard" && method == Method.POST) {
+            val p = services.clipboard ?: return unavailable()
+            val text = JsonFields.string(readRaw(session), "text")
+            if (text == null || text.length > MAX_CLIPBOARD) return json(Status.BAD_REQUEST, "{\"error\":\"text required\"}")
+            return if (p.setPhoneClipboard(text)) json(Status.OK, "{\"ok\":true}") else json(Status.INTERNAL_ERROR, "{\"error\":\"failed\"}")
+        }
+
+        // find my phone
+        if (uri == "/api/find" && method == Method.GET) {
+            val p = services.find ?: return unavailable()
+            return json(Status.OK, "{\"ringing\":${p.isRinging()}}")
+        }
+        if (uri == "/api/find/ring" && method == Method.POST) {
+            val p = services.find ?: return unavailable()
+            drainBody(session)
+            return if (p.ring()) json(Status.OK, "{\"ringing\":true}") else json(Status.INTERNAL_ERROR, "{\"error\":\"cannot ring\"}")
+        }
+        if (uri == "/api/find/stop" && method == Method.POST) {
+            val p = services.find ?: return unavailable()
+            drainBody(session)
+            p.stop()
+            return json(Status.OK, "{\"ringing\":false}")
+        }
+        return null
+    }
+
+    private fun uploadFiles(session: IHTTPSession): Response {
+        val p = services.files ?: return unavailable()
+        val temp = HashMap<String, String>()
+        try {
+            session.parseBody(temp)
+        } catch (e: Exception) {
+            return json(Status.BAD_REQUEST, "{\"error\":\"bad upload\"}")
+        }
+        val saved = ArrayList<SharedFile>()
+        try {
+            for ((field, path) in temp) {
+                if (field == "postData") continue
+                val original = session.parameters[field]?.firstOrNull() ?: continue
+                val name = cleanFileName(original)
+                java.io.File(path).inputStream().use { ins ->
+                    p.save(name, guessMime(name), ins)?.let { saved.add(it) }
+                }
+            }
+        } finally {
+            for ((field, path) in temp) if (field != "postData") java.io.File(path).delete()
+        }
+        if (saved.isEmpty()) return json(Status.BAD_REQUEST, "{\"error\":\"no file received\"}")
+        return json(Status.OK, Json.files(saved))
+    }
+
     // ---------------------------------------------------------------- static files
 
     private fun staticFile(uri: String, method: Method): Response {
@@ -213,17 +435,18 @@ class GalleryServer(
 
     private fun tokenMatches(supplied: String): Boolean = constantTimeEquals(supplied, token)
 
-    private fun hasValidCookie(session: IHTTPSession): Boolean {
-        val header = session.headers["cookie"] ?: return false
+    private fun cookieValue(session: IHTTPSession, name: String): String? {
+        val header = session.headers["cookie"] ?: return null
         for (part in header.split(';')) {
             val eq = part.indexOf('=')
             if (eq <= 0) continue
-            if (part.substring(0, eq).trim() == COOKIE_NAME && constantTimeEquals(part.substring(eq + 1).trim(), token)) {
-                return true
-            }
+            if (part.substring(0, eq).trim() == name) return part.substring(eq + 1).trim()
         }
-        return false
+        return null
     }
+
+    private fun hasValidCookie(session: IHTTPSession): Boolean =
+        cookieValue(session, COOKIE_NAME)?.let { constantTimeEquals(it, token) } == true
 
     private fun redirectWithCookie(): Response {
         val r = newFixedLengthResponse(Status.REDIRECT_SEE_OTHER, "text/plain", "")
@@ -244,6 +467,17 @@ class GalleryServer(
 
     // ---------------------------------------------------------------- request/response helpers
 
+    /** The raw request body (JSON), or null. Must be called at most once per request. */
+    private fun readRaw(session: IHTTPSession): String? {
+        val files = HashMap<String, String>()
+        return try {
+            session.parseBody(files)
+            files["postData"]
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun readIds(session: IHTTPSession): List<Long> {
         val files = HashMap<String, String>()
         session.parseBody(files)
@@ -251,7 +485,7 @@ class GalleryServer(
         return Json.parseIds(raw)
     }
 
-    private fun json(status: Status, body: String): Response =
+    private fun json(status: Response.IStatus, body: String): Response =
         newFixedLengthResponse(status, "application/json; charset=utf-8", body).apply {
             addHeader("Cache-Control", "no-store")
         }
@@ -266,6 +500,49 @@ class GalleryServer(
 
     companion object {
         const val COOKIE_NAME = "gallery_session"
+        const val UNLOCK_COOKIE = "gallery_unlock"
+        private const val MAX_TEXT = 4_000
+        private const val MAX_SMS = 1_000
+        private const val MAX_CLIPBOARD = 100_000
+        private val SMS_THREAD = Regex("^/api/sms/threads/(\d{1,18})$")
+        private val FILE_ROUTE = Regex("^/api/files/(\d{1,18})(/download)?$")
+        private val PHONE_NUMBER = Regex("^[+0-9 ()\-]{3,24}$")
+
+        private val LOCKED = object : Response.IStatus {
+            override fun getRequestStatus(): Int = 423
+            override fun getDescription(): String = "423 Locked"
+        }
+        private val TOO_MANY = object : Response.IStatus {
+            override fun getRequestStatus(): Int = 429
+            override fun getDescription(): String = "429 Too Many Requests"
+        }
+
+        fun newRandomToken(): String {
+            val bytes = ByteArray(24)
+            java.security.SecureRandom().nextBytes(bytes)
+            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        }
+
+        fun cleanFileName(raw: String): String {
+            val base = raw.substringAfterLast('/').substringAfterLast('\')
+            val safe = base.map { if (it.code < 32 || it in "<>:\"|?*") '_' else it }.joinToString("").trim().trim('.')
+            return safe.take(120).ifBlank { "file" }
+        }
+
+        fun guessMime(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "pdf" -> "application/pdf"
+            "txt", "log", "md" -> "text/plain"
+            "zip" -> "application/zip"
+            "mp4" -> "video/mp4"
+            "mp3" -> "audio/mpeg"
+            "doc", "docx" -> "application/msword"
+            else -> "application/octet-stream"
+        }
+
         private const val MAX_IDS = 5000
         private val PHOTO_ROUTE = Regex("^/api/photos/(\\d{1,18})/(thumb|full|download)$")
 
