@@ -16,6 +16,7 @@ import android.util.Base64
 import com.example.gallery.server.AssetProvider
 import com.example.gallery.server.GalleryServer
 import com.example.gallery.server.PhotoCatalog
+import com.example.gallery.server.Services
 import fi.iki.elonen.NanoHTTPD
 import java.io.IOException
 import java.security.SecureRandom
@@ -38,6 +39,8 @@ class GalleryService : Service() {
     private var wifiLock: WifiManager.WifiLock? = null
     private var catalog: PhotoCatalog? = null
     private var lastText = "Starting…"
+    private var services: Services = Services()
+    private var findProvider: RingProvider? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -62,8 +65,8 @@ class GalleryService : Service() {
         // Must happen within seconds of startForegroundService(), so do it before anything else.
         enterForeground(Notifications.server(this, "Starting…"))
 
-        if (!Permissions.fullAccess(this) || Permissions.hasNoScreenLock(this)) {
-            ServerStateHolder.state = ServerState.Failed("Full photo access and a screen lock are required.")
+        if (!Permissions.fullAccess(this) || Permissions.hasNoScreenLock(this) || !PasscodeStore(this).isSet()) {
+            ServerStateHolder.state = ServerState.Failed("Full photo access, a screen lock and a web passcode are required.")
             shutdown(keepState = true)
             return
         }
@@ -72,6 +75,19 @@ class GalleryService : Service() {
         ServerStateHolder.state = ServerState.Starting
 
         val store = MediaStorePhotoStore(this)
+        val ring = RingProvider(this)
+        findProvider = ring
+        services = Services(
+            status = DeviceStatusProvider(this),
+            notifications = NotificationsProviderImpl(this),
+            messages = SmsProviderImpl(this),
+            files = SharedFilesProvider(this),
+            clipboard = ClipboardHubProvider(this),
+            find = ring,
+            passcode = PasscodeStore(this),
+            features = FeaturePrefs(this),
+            deviceName = { deviceName(this) },
+        )
         val cat = PhotoCatalog { store.loadAll() }
         catalog = cat
         this.store = store
@@ -134,7 +150,7 @@ class GalleryService : Service() {
         token = newToken()
         val candidates = (PORT_FIRST..PORT_LAST).toList() + 0 // 0 = any free port
         for (candidate in candidates) {
-            val srv = GalleryServer(candidate, token, cat, photoStore, TrashCoordinator, assetProvider)
+            val srv = GalleryServer(candidate, token, cat, photoStore, TrashCoordinator, assetProvider, services = services)
             try {
                 srv.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
             } catch (_: IOException) {
@@ -190,6 +206,8 @@ class GalleryService : Service() {
         observer?.let { contentResolver.unregisterContentObserver(it) }
         observer = null
         stopServer()
+        findProvider?.stop()
+        findProvider = null
         wifiLock?.let { if (it.isHeld) it.release() }
         wifiLock = null
     }

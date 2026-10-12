@@ -23,10 +23,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -151,7 +158,7 @@ fun FailedScreen(message: String) = ScreenFrame {
 }
 
 @Composable
-fun RunningScreen(state: ServerState.Running, onCopy: () -> Unit, onStop: () -> Unit) = ScreenFrame {
+fun RunningScreen(state: ServerState.Running, onCopy: () -> Unit, onSettings: () -> Unit, onStop: () -> Unit) = ScreenFrame {
     StatusPill("Running", Color(0xFF2E9E5B))
     Spacer(Modifier.height(20.dp))
     Title("Open your gallery")
@@ -187,6 +194,8 @@ fun RunningScreen(state: ServerState.Running, onCopy: () -> Unit, onStop: () -> 
     Spacer(Modifier.height(14.dp))
     Button(onClick = onCopy, modifier = Modifier.fillMaxWidth()) { Text("Copy link") }
     Spacer(Modifier.height(10.dp))
+    OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Features and passcode") }
+    Spacer(Modifier.height(10.dp))
     OutlinedButton(onClick = onStop, modifier = Modifier.fillMaxWidth()) { Text("Stop server") }
 
     Text(
@@ -196,4 +205,102 @@ fun RunningScreen(state: ServerState.Running, onCopy: () -> Unit, onStop: () -> 
         textAlign = TextAlign.Center,
         modifier = Modifier.padding(top = 18.dp),
     )
+}
+
+// ---------------------------------------------------------------- Phase 1: passcode + settings
+
+@Composable
+fun SetPasscodeScreen(isChange: Boolean, onSave: (String) -> Unit, onCancel: (() -> Unit)?) = ScreenFrame {
+    var code by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    val tooShort = code.isNotEmpty() && code.length < com.example.gallery.android.PasscodeStore.MIN_LENGTH
+    val mismatch = confirm.isNotEmpty() && confirm != code
+    val ok = code.length >= com.example.gallery.android.PasscodeStore.MIN_LENGTH && code == confirm
+
+    Title(if (isChange) "Change web passcode" else "Set a web passcode")
+    Body(
+        "Anyone opening your gallery in a browser must enter this passcode. Use at least " +
+            "${com.example.gallery.android.PasscodeStore.MIN_LENGTH} characters. It is stored only as a hash on this phone.",
+    )
+    OutlinedTextField(
+        value = code,
+        onValueChange = { code = it },
+        label = { Text("New passcode") },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        isError = tooShort,
+        supportingText = { if (tooShort) Text("At least ${com.example.gallery.android.PasscodeStore.MIN_LENGTH} characters") },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+        value = confirm,
+        onValueChange = { confirm = it },
+        label = { Text("Repeat passcode") },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        isError = mismatch,
+        supportingText = { if (mismatch) Text("Doesn’t match") },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(18.dp))
+    Button(onClick = { onSave(code) }, enabled = ok, modifier = Modifier.fillMaxWidth()) { Text("Save passcode") }
+    if (onCancel != null) {
+        Spacer(Modifier.height(10.dp))
+        OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Cancel") }
+    }
+}
+
+data class FeatureRow(
+    val feature: com.example.gallery.server.Feature,
+    val title: String,
+    val subtitle: String,
+    val enabled: Boolean,
+    val problem: String?,
+    val fixLabel: String?,
+)
+
+@Composable
+fun SettingsScreen(
+    rows: List<FeatureRow>,
+    ringing: Boolean,
+    onToggle: (FeatureRow, Boolean) -> Unit,
+    onFix: (FeatureRow) -> Unit,
+    onChangePasscode: () -> Unit,
+    onStopRinging: () -> Unit,
+    onBack: () -> Unit,
+) = ScreenFrame {
+    Title("What your computer can use")
+    Body("Switch on only what you need. Each feature stays locked behind your web passcode.")
+    rows.forEach { row ->
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(row.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(row.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = row.enabled, onCheckedChange = { onToggle(row, it) })
+                }
+                if (row.enabled && row.problem != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(row.problem, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    if (row.fixLabel != null) {
+                        TextButton(onClick = { onFix(row) }) { Text(row.fixLabel) }
+                    }
+                }
+            }
+        }
+    }
+    if (ringing) {
+        Button(onClick = onStopRinging, modifier = Modifier.fillMaxWidth()) { Text("Stop ringing") }
+        Spacer(Modifier.height(10.dp))
+    }
+    OutlinedButton(onClick = onChangePasscode, modifier = Modifier.fillMaxWidth()) { Text("Change web passcode") }
+    Spacer(Modifier.height(10.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Done") }
 }
