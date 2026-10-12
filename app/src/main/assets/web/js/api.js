@@ -9,6 +9,8 @@ export class ApiError extends Error {
 
 const unauthorizedHandlers = new Set();
 export const onUnauthorized = (fn) => unauthorizedHandlers.add(fn);
+const lockedHandlers = new Set();
+export const onLocked = (fn) => lockedHandlers.add(fn);
 
 async function request(path, options = {}) {
   const res = await fetch(path, { credentials: 'same-origin', cache: 'no-store', ...options });
@@ -16,9 +18,34 @@ async function request(path, options = {}) {
     unauthorizedHandlers.forEach((fn) => fn());
     throw new ApiError(401);
   }
-  if (!res.ok) throw new ApiError(res.status);
+  if (res.status === 423) {
+    lockedHandlers.forEach((fn) => fn());
+    throw new ApiError(423);
+  }
+  if (!res.ok) {
+    const err = new ApiError(res.status);
+    try { err.body = await res.clone().json(); } catch { /* not JSON */ }
+    throw err;
+  }
   return res;
 }
+
+export async function getJSON(path, options) {
+  return (await request(path, options)).json();
+}
+
+export async function sendJSON(path, body, method = 'POST') {
+  const init = method === 'DELETE'
+    ? { method }
+    : { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body ?? {}) };
+  const res = await request(path, init);
+  return res.json();
+}
+
+export const getSession = () => getJSON('/api/session');
+
+/** Resolves {ok:true}. Rejects with ApiError: 403 {attemptsLeft} for a wrong passcode, 429 {retryAfterSec} when locked out. */
+export const login = (passcode) => sendJSON('/api/login', { passcode });
 
 export const thumbUrl = (id) => `/api/photos/${id}/thumb`;
 export const fullUrl = (id) => `/api/photos/${id}/full`;

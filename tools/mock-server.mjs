@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { handlePhase1 } from './mock-phase1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app/src/main/assets/web');
 const PORT = Number(process.env.PORT || 8099);
@@ -93,6 +94,8 @@ const server = http.createServer(async (req, res) => {
   if (!(req.headers.cookie || '').split(';').some((c) => c.trim() === `${COOKIE}=${TOKEN}`)) {
     return send(401, 'Open the link shown in the Gallery app.', { 'Content-Type': 'text/html' });
   }
+
+  if (url.pathname.startsWith('/api/') && (await handlePhase1(req, url, send, json))) return;
 
   if (url.pathname === '/api/photos') {
     const q = url.searchParams;

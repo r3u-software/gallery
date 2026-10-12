@@ -17,7 +17,15 @@
       <span class="count" id="count" aria-live="polite">Loading…</span>
     </div>
 
-    <div class="controls">
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button type="button" class="tab" data-tab="photos" aria-selected="true">Photos</button>
+      <button type="button" class="tab" data-tab="notifications" aria-selected="false">Notifications<span class="badge" id="notifBadge" hidden>0</span></button>
+      <button type="button" class="tab" data-tab="messages" aria-selected="false">Messages</button>
+      <button type="button" class="tab" data-tab="files" aria-selected="false">Files</button>
+      <button type="button" class="tab" data-tab="status" aria-selected="false">Phone</button>
+    </nav>
+
+    <div class="controls" id="photoControls">
       <div class="chips" role="group" aria-label="Filter photos" id="chips">
         <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
         <button type="button" class="chip" data-filter="screenshots" aria-pressed="false">Screenshots</button>
@@ -35,6 +43,7 @@
   </header>
 
   <main id="main">
+   <section id="tab-photos" class="tabpanel">
     <div id="skeleton" class="skeleton" aria-hidden="true"></div>
     <div id="grid" class="grid" role="grid" aria-label="Photos" aria-multiselectable="true"></div>
     <div id="empty" class="empty" hidden>
@@ -43,6 +52,50 @@
       <p id="emptyText">Nothing matches this filter.</p>
     </div>
     <p id="loadingMore" class="loading-more" hidden>Loading more photos…</p>
+   </section>
+
+   <section id="tab-notifications" class="tabpanel panel" hidden aria-label="Notifications">
+    <div class="panel-head"><h2>Notifications</h2><p class="muted" id="notifHint"></p></div>
+    <div id="notifList" class="stack"></div>
+   </section>
+
+   <section id="tab-messages" class="tabpanel panel messages" hidden aria-label="Messages">
+    <div class="threads" id="threadList" role="list"></div>
+    <div class="convo" id="convo">
+      <div class="convo-empty" id="convoEmpty">Select a conversation</div>
+      <div class="convo-head" id="convoHead" hidden></div>
+      <div class="bubbles" id="bubbles" hidden></div>
+      <form class="composer" id="composer" hidden>
+        <label class="sr" for="composeText">Message</label>
+        <textarea id="composeText" rows="1" placeholder="Type a message" maxlength="1000"></textarea>
+        <button type="submit" class="btn" id="composeSend">Send</button>
+      </form>
+    </div>
+   </section>
+
+   <section id="tab-files" class="tabpanel panel" hidden aria-label="Files">
+    <div class="panel-head"><h2>Files</h2><p class="muted">Send files to the phone, or share from any app on the phone to R3U Gallery to get them here.</p></div>
+    <label class="drop" id="drop" for="fileInput">
+      <input type="file" id="fileInput" multiple hidden>
+      <strong>Drop files here</strong><span>or click to choose</span>
+      <div class="progress" id="uploadProgress" hidden><div class="bar" id="uploadBar"></div></div>
+    </label>
+    <div id="fileList" class="stack"></div>
+    <div class="clip">
+      <h3>Clipboard</h3>
+      <div class="clip-card"><span class="eyebrow">From phone</span><p id="clipFromPhone" class="clip-text">Nothing shared yet. Share text to R3U Gallery on the phone.</p><button type="button" class="btn ghost" id="clipCopy" hidden>Copy</button></div>
+      <div class="clip-card"><span class="eyebrow">To phone</span><textarea id="clipToPhone" rows="3" placeholder="Type or paste text to put on the phone's clipboard"></textarea><button type="button" class="btn" id="clipSend">Send to phone</button></div>
+    </div>
+   </section>
+
+   <section id="tab-status" class="tabpanel panel" hidden aria-label="Phone">
+    <div class="panel-head"><h2 id="deviceName">Phone</h2><p class="muted" id="deviceModel"></p></div>
+    <div class="status-grid" id="statusGrid"></div>
+    <div class="find" id="findCard">
+      <div><h3>Find my phone</h3><p class="muted">Rings at full volume for up to a minute.</p></div>
+      <button type="button" class="btn" id="findBtn">Ring phone</button>
+    </div>
+   </section>
   </main>
 
   <!-- Selection bar -->
@@ -100,6 +153,18 @@
       </div>
     </div>
   </dialog>
+
+  <!-- Passcode lock -->
+  <div class="overlay" id="lock" hidden>
+    <form class="overlay-card lock-card" id="lockForm">
+      <h2>Enter passcode</h2>
+      <p>Enter the web passcode you set in the R3U Gallery app.</p>
+      <label class="sr" for="passcode">Passcode</label>
+      <input id="passcode" type="password" autocomplete="current-password" required>
+      <p class="lock-error" id="lockError" role="alert" hidden></p>
+      <button type="submit" class="btn" id="lockBtn">Unlock</button>
+    </form>
+  </div>
 
   <!-- Session lost -->
   <div class="overlay" id="expired" hidden>

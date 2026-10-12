@@ -1,8 +1,9 @@
-import { fetchPage, requestTrash, trashStatus, downloadIds, onUnauthorized } from './api.js';
+import { fetchPage, requestTrash, trashStatus, downloadIds, onUnauthorized, onLocked, getSession, login, ApiError } from './api.js';
 import { dayKey } from './layout.js';
 import { Grid } from './grid.js';
 import { Viewer } from './viewer.js';
 import { toast, confirmDialog, plural, fmtCount } from './ui.js';
+import { notifications, messages, files, status } from './panels.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -267,4 +268,99 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-load();
+// ---------------------------------------------------------------- tabs, passcode lock, boot
+
+const PANELS = { notifications, messages, files, status };
+let activeTab = 'photos';
+let session = null;
+let booted = false;
+
+function showTab(name) {
+  if (name === activeTab) return;
+  PANELS[activeTab]?.hide?.();
+  activeTab = name;
+  for (const b of $('tabs').children) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  for (const section of document.querySelectorAll('.tabpanel')) section.hidden = section.id !== `tab-${name}`;
+  $('photoControls').hidden = name !== 'photos';
+  $('count').hidden = name !== 'photos';
+  if (name !== 'photos') clearSelection();
+  PANELS[name]?.show?.();
+}
+
+function applyFeatures(features) {
+  for (const b of $('tabs').children) {
+    const feature = b.dataset.tab === 'status' ? 'status' : b.dataset.tab;
+    const on = features[feature] !== false;
+    b.disabled = !on;
+    b.title = on ? '' : 'Turned off in the phone app';
+  }
+  if (features.photos === false && activeTab === 'photos') {
+    const first = [...$('tabs').children].find((b) => !b.disabled);
+    if (first) showTab(first.dataset.tab);
+  }
+}
+
+$('tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('.tab');
+  if (b && !b.disabled) showTab(b.dataset.tab);
+});
+
+function showLock(message) {
+  const lock = $('lock');
+  lock.hidden = false;
+  const err = $('lockError');
+  err.hidden = !message;
+  err.textContent = message || '';
+  $('passcode').value = '';
+  $('passcode').focus();
+}
+
+onLocked(() => { if (!state.expired) showLock(); });
+
+$('lockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('lockBtn');
+  btn.disabled = true;
+  try {
+    await login($('passcode').value);
+    $('lock').hidden = true;
+    session = await getSession();
+    applyFeatures(session.features);
+    boot();
+    PANELS[activeTab]?.show?.();
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 429) {
+      showLock(`Too many attempts. Try again in ${err.body?.retryAfterSec ?? 30} seconds.`);
+    } else if (err instanceof ApiError && err.status === 403) {
+      const left = err.body?.attemptsLeft;
+      showLock(left != null ? `Wrong passcode. ${plural(left, 'attempt', 'attempts')} left.` : 'Wrong passcode.');
+    } else if (!state.expired) {
+      showLock("Couldn't reach your phone.");
+    }
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function boot() {
+  if (booted) return;
+  booted = true;
+  messages.init();
+  files.init();
+  status.init();
+  load();
+}
+
+(async function start() {
+  try {
+    session = await getSession();
+  } catch {
+    return; // 401 handler already showed "Session ended"
+  }
+  applyFeatures(session.features);
+  if (session.passcodeRequired && !session.unlocked) {
+    showLock();
+    return;
+  }
+  boot();
+})();
