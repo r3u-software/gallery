@@ -37,6 +37,7 @@ class GalleryServer(
 ) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
+        currentBody.remove()
         return try {
             route(session)
         } catch (e: Exception) {
@@ -463,11 +464,13 @@ class GalleryServer(
 
     private class Parsed(val raw: String?, val files: Map<String, String>)
 
-    // NanoHTTPD can parse a request body only once, so every handler shares this one parse per request.
-    private val parsedBodies = java.util.Collections.synchronizedMap(java.util.WeakHashMap<IHTTPSession, Parsed>())
+    // NanoHTTPD can parse a request body only once, and it reuses one session object for every request on a
+    // keep-alive connection. Each connection is served by one thread, one request at a time, so the parsed body
+    // is cached per thread and cleared at the start of every request.
+    private val currentBody = ThreadLocal<Parsed?>()
 
     private fun parsed(session: IHTTPSession): Parsed {
-        parsedBodies[session]?.let { return it }
+        currentBody.get()?.let { return it }
         val files = HashMap<String, String>()
         val result = try {
             session.parseBody(files)
@@ -475,7 +478,7 @@ class GalleryServer(
         } catch (_: Exception) {
             Parsed(null, files)
         }
-        parsedBodies[session] = result
+        currentBody.set(result)
         return result
     }
 
