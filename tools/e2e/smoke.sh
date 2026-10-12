@@ -84,10 +84,17 @@ curl -s -b "$JAR" "$BASE/" | grep -q "R3U" || fail "web UI not served"
 ok "web UI served"
 
 # --- photos ---
-PHOTOS=$(curl -s -b "$JAR" "$BASE/api/photos?limit=5")
-echo "$PHOTOS" | grep -q '"total":' || fail "photos list: $PHOTOS"
-ID=$(echo "$PHOTOS" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
-[ -n "$ID" ] || fail "no photo found in MediaStore: $PHOTOS"
+ID=""
+for i in $(seq 1 20); do
+  PHOTOS=$(curl -s -b "$JAR" "$BASE/api/photos?limit=5" || true)
+  ID=$(echo "$PHOTOS" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2 || true)
+  [ -n "$ID" ] && break
+  # nudge the media scanner again while we wait
+  adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/r3u-e2e.png >/dev/null || true
+  sleep 3
+done
+echo "photos response: $PHOTOS"
+[ -n "$ID" ] || { adb shell content query --uri content://media/external/images/media --projection _id:_display_name | head -5 || true; fail "no photo found in MediaStore"; }
 [ "$(code -b "$JAR" "$BASE/api/photos/$ID/thumb")" = "200" ] || fail "thumbnail"
 [ "$(code -b "$JAR" -H 'Range: bytes=0-9' "$BASE/api/photos/$ID/full")" = "206" ] || fail "range request"
 ok "photos, thumbnail and range requests"
@@ -101,7 +108,8 @@ echo "hello from the computer" > "$OUT/up.txt"
 [ "$(code -b "$JAR" -F "file=@$OUT/up.txt;filename=up.txt" "$BASE/api/files/upload")" = "200" ] || fail "file upload"
 LIST=$(curl -s -b "$JAR" "$BASE/api/files")
 echo "$LIST" | grep -q 'up.txt' || fail "uploaded file not listed: $LIST"
-FID=$(echo "$LIST" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+FID=$(echo "$LIST" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2 || true)
+[ -n "$FID" ] || fail "no file id in $LIST"
 curl -s -b "$JAR" "$BASE/api/files/$FID/download" | grep -q "hello from the computer" || fail "file download content"
 [ "$(code -b "$JAR" -X DELETE "$BASE/api/files/$FID")" = "200" ] || fail "file delete"
 ok "files upload, list, download, delete"
