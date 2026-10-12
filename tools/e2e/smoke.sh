@@ -64,6 +64,7 @@ rm -f "$JAR"
 sleep 2
 adb exec-out screencap -p > "$OUT/running-screen.png" || true
 
+has() { local pat="$1"; shift; local body; body=$(curl -s "$@" || true); grep -q -- "$pat" <<<"$body"; }
 code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
 
 # --- security ---
@@ -80,7 +81,7 @@ ok "passcode gate locks the API"
 ok "passcode login"
 
 # --- web UI is served ---
-curl -s -b "$JAR" "$BASE/" | grep -q "R3U" || fail "web UI not served"
+has "R3U" -b "$JAR" "$BASE/" || fail "web UI not served"
 ok "web UI served"
 
 # --- photos ---
@@ -100,24 +101,24 @@ echo "photos response: $PHOTOS"
 ok "photos, thumbnail and range requests"
 
 # --- status ---
-curl -s -b "$JAR" "$BASE/api/status" | grep -q '"batteryPercent"' || fail "status"
+has '"batteryPercent"' -b "$JAR" "$BASE/api/status" || fail "status"
 ok "status"
 
 # --- files ---
 echo "hello from the computer" > "$OUT/up.txt"
 [ "$(code -b "$JAR" -F "file=@$OUT/up.txt;filename=up.txt" "$BASE/api/files/upload")" = "200" ] || fail "file upload"
 LIST=$(curl -s -b "$JAR" "$BASE/api/files")
-echo "$LIST" | grep -q 'up.txt' || fail "uploaded file not listed: $LIST"
+grep -q 'up.txt' <<<"$LIST" || fail "uploaded file not listed: $LIST"
 FID=$(echo "$LIST" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2 || true)
 [ -n "$FID" ] || fail "no file id in $LIST"
-curl -s -b "$JAR" "$BASE/api/files/$FID/download" | grep -q "hello from the computer" || fail "file download content"
+has "hello from the computer" -b "$JAR" "$BASE/api/files/$FID/download" || fail "file download content"
 [ "$(code -b "$JAR" -X DELETE "$BASE/api/files/$FID")" = "200" ] || fail "file delete"
 ok "files upload, list, download, delete"
 
 # --- clipboard + find ---
 [ "$(code -b "$JAR" -X POST -H 'Content-Type: application/json' -d '{"text":"clip"}' "$BASE/api/clipboard")" = "200" ] || fail "clipboard set"
 [ "$(code -b "$JAR" -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/find/ring")" = "200" ] || fail "ring"
-curl -s -b "$JAR" "$BASE/api/find" | grep -q '"ringing":true' || fail "should be ringing"
+has '"ringing":true' -b "$JAR" "$BASE/api/find" || fail "should be ringing"
 curl -s -b "$JAR" -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/find/stop" >/dev/null
 ok "clipboard and find phone"
 
@@ -126,11 +127,11 @@ adb shell cmd notification post -S bigtext -t "E2E" r3u-e2e "Body from the emula
 N=""
 for i in $(seq 1 15); do
   N=$(curl -s -b "$JAR" "$BASE/api/notifications" || true)
-  echo "$N" | grep -q "r3u-e2e" && break
+  grep -q "r3u-e2e" <<<"$N" && break
   sleep 1
 done
-echo "$N" | grep -q '"connected":true' || fail "notification listener not connected: $N"
-echo "$N" | grep -q "r3u-e2e" || fail "notification not mirrored: $N"
+grep -q '"connected":true' <<<"$N" || fail "notification listener not connected: $N"
+grep -q "r3u-e2e" <<<"$N" || fail "notification not mirrored: $N"
 ok "notification mirrored"
 NKEY=$(echo "$N" | grep -o '"key":"[^"]*r3u-e2e[^"]*"' | head -1 | cut -d'"' -f4 || true)
 if [ -n "$NKEY" ]; then
@@ -141,7 +142,7 @@ if [ -n "$NKEY" ]; then
   for i in $(seq 1 10); do
     sleep 1
     AFTER=$(curl -s -b "$JAR" "$BASE/api/notifications" || true)
-    if ! echo "$AFTER" | grep -q "r3u-e2e"; then GONE=1; break; fi
+    if ! grep -q "r3u-e2e" <<<"$AFTER"; then GONE=1; break; fi
   done
   [ -n "$GONE" ] || { adb shell dumpsys notification --noredact | grep -i "r3u-e2e" | head -5 || true; fail "notification not dismissed: $AFTER"; }
   ok "notification dismissed from the browser"
@@ -151,8 +152,8 @@ fi
 adb emu sms send 5551234 "hello from e2e" >/dev/null 2>&1 || true
 sleep 2
 T=$(curl -s -b "$JAR" "$BASE/api/sms/threads")
-echo "$T" | grep -q '"permission":true' || fail "sms permission not granted: $T"
-if echo "$T" | grep -q "hello from e2e"; then ok "sms received"; else echo "WARN sms not delivered by emulator console: $T"; fi
+grep -q '"permission":true' <<<"$T" || fail "sms permission not granted: $T"
+if grep -q "hello from e2e" <<<"$T"; then ok "sms received"; else echo "WARN sms not delivered by emulator console: $T"; fi
 
 # --- feature switch is enforced server-side ---
 adb shell am force-stop $PKG >/dev/null || true
