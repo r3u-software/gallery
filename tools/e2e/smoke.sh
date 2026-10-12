@@ -132,7 +132,7 @@ done
 echo "$N" | grep -q '"connected":true' || fail "notification listener not connected: $N"
 echo "$N" | grep -q "r3u-e2e" || fail "notification not mirrored: $N"
 ok "notification mirrored"
-NKEY=$(echo "$N" | grep -o '"key":"[^"]*r3u-e2e[^"]*"' | head -1 | sed -E 's/"key":"(.*)"//' || true)
+NKEY=$(echo "$N" | grep -o '"key":"[^"]*r3u-e2e[^"]*"' | head -1 | cut -d'"' -f4 || true)
 if [ -n "$NKEY" ]; then
   echo "dismissing key: $NKEY"
   DISMISS=$(curl -s -w ' [%{http_code}]' -b "$JAR" -X POST -H 'Content-Type: application/json' -d "{\"key\":\"$NKEY\"}" "$BASE/api/notifications/dismiss" || true)
