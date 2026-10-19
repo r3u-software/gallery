@@ -14,14 +14,19 @@ import com.example.gallery.ui.TrashConfirmActivity
 object Notifications {
     const val CHANNEL_SERVER = "server"
     const val CHANNEL_TRASH = "trash"
+    const val CHANNEL_OPEN = "open"
     const val ID_SERVER = 1
     const val ID_TRASH = 2
+    const val ID_OPEN = 3
 
     fun createChannels(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_SERVER, ctx.getString(R.string.channel_server), NotificationManager.IMPORTANCE_LOW)
                 .apply { setShowBadge(false) },
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_OPEN, ctx.getString(R.string.channel_open), NotificationManager.IMPORTANCE_HIGH),
         )
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_TRASH, ctx.getString(R.string.channel_trash), NotificationManager.IMPORTANCE_HIGH),
@@ -69,6 +74,28 @@ object Notifications {
             ctx.getSystemService(NotificationManager::class.java).notify(ID_TRASH, n)
         } catch (_: SecurityException) {
             // Notification permission denied: the user can still open the app to confirm.
+        }
+    }
+
+    /** A request from the computer to open something on this phone; opens when the user taps it. */
+    fun postOpenRequest(ctx: Context, title: String, detail: String, target: Intent) {
+        val tap = PendingIntent.getActivity(
+            ctx, (System.currentTimeMillis() and 0x7fffffff).toInt(), target,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val n = NotificationCompat.Builder(ctx, CHANNEL_OPEN)
+            .setSmallIcon(R.drawable.ic_stat_gallery)
+            .setContentTitle("From your computer: $title")
+            .setContentText(detail)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setAutoCancel(true)
+            .setContentIntent(tap)
+            .build()
+        try {
+            ctx.getSystemService(NotificationManager::class.java).notify(ID_OPEN, n)
+        } catch (_: SecurityException) {
+            // Notification permission denied: nothing more we can do.
         }
     }
 

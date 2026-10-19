@@ -3,4 +3,5 @@
     <string name="app_name">R3U | Phone Link</string>
     <string name="channel_server">R3U | Phone Link server</string>
     <string name="channel_trash">Trash confirmations</string>
+    <string name="channel_open">Open from computer</string>
 </resources>

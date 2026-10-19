@@ -84,6 +84,8 @@ class GalleryService : Service() {
             files = SharedFilesProvider(this),
             clipboard = ClipboardHubProvider(this),
             find = ring,
+            contacts = ContactsProviderImpl(this),
+            open = OpenOnPhone(this),
             passcode = PasscodeStore(this),
             features = FeaturePrefs(this),
             deviceName = { deviceName(this) },

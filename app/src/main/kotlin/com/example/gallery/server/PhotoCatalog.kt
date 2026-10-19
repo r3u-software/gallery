@@ -12,7 +12,8 @@ class PhotoCatalog(private val loader: () -> List<Photo>) {
     private val lock = Any()
     private var newest: List<Photo>? = null
     private var byId: Map<Long, Photo> = emptyMap()
-    private val views = HashMap<Pair<SortOrder, PhotoFilter>, List<Photo>>()
+    private data class ViewKey(val sort: SortOrder, val filter: PhotoFilter, val bucket: String?)
+    private val views = HashMap<ViewKey, List<Photo>>()
 
     fun invalidate() = synchronized(lock) {
         newest = null
@@ -25,9 +26,9 @@ class PhotoCatalog(private val loader: () -> List<Photo>) {
         byId[id]
     }
 
-    fun page(cursor: String?, limit: Int, sort: SortOrder, filter: PhotoFilter): PhotoPage =
+    fun page(cursor: String?, limit: Int, sort: SortOrder, filter: PhotoFilter, bucket: String? = null): PhotoPage =
         synchronized(lock) {
-            val view = view(sort, filter)
+            val view = view(sort, filter, bucket)
             val start = if (cursor.isNullOrEmpty()) 0 else firstAfter(view, parseCursor(cursor), sort)
             val size = limit.coerceIn(1, MAX_LIMIT)
             val end = minOf(view.size, start + size)
@@ -46,13 +47,23 @@ class PhotoCatalog(private val loader: () -> List<Photo>) {
         return sorted
     }
 
-    private fun view(sort: SortOrder, filter: PhotoFilter): List<Photo> {
+    private fun view(sort: SortOrder, filter: PhotoFilter, bucket: String?): List<Photo> {
         val all = ensureLoaded()
-        return views.getOrPut(sort to filter) {
-            val filtered = if (filter == PhotoFilter.ALL) all else all.filter { filter.matches(it) }
+        return views.getOrPut(ViewKey(sort, filter, bucket)) {
+            var filtered = if (filter == PhotoFilter.ALL) all else all.filter { filter.matches(it) }
+            if (bucket != null) filtered = filtered.filter { it.bucket == bucket }
             if (sort == SortOrder.NEWEST) filtered else filtered.asReversed().toList()
         }
     }
+
+    /** Photo folders with their sizes, biggest first. Photos with no folder name are grouped as "Other". */
+    fun albums(): List<Album> = synchronized(lock) {
+        ensureLoaded().groupingBy { it.bucket.ifBlank { "Other" } }.eachCount()
+            .map { Album(it.key, it.value) }
+            .sortedWith(compareByDescending<Album> { it.count }.thenBy { it.name })
+    }
+
+    fun total(): Int = synchronized(lock) { ensureLoaded().size }
 
     /** Index of the first element that sorts strictly after [key] in the given order. */
     private fun firstAfter(view: List<Photo>, key: Pair<Long, Long>, sort: SortOrder): Int {

@@ -89,7 +89,7 @@ class Phase1Test {
         }
         return TestServer(
             listOf(photo(1)),
-            services = Services(status, notifications, messages, files, clipboard, find, verifier, flags) { "Reu's phone" },
+            services = Services(status, notifications, messages, files, clipboard, find, passcode = verifier, features = flags, deviceName = { "Reu's phone" }),
         ).also { srv = it }
     }
 

@@ -178,8 +178,13 @@ class MainActivity : FragmentActivity() {
                 if (smsGranted()) null else "Needs permission to read and send SMS and read contacts",
                 "Grant permission",
             ),
+            row(
+                Feature.CONTACTS, "Contacts", "Look up names and numbers",
+                if (contactsGranted()) null else "Needs permission to read contacts",
+                "Grant permission",
+            ),
             row(Feature.FILES, "Files and clipboard", "Send files and text between phone and computer", null, null),
-            row(Feature.FIND, "Find my phone", "Ring this phone from the browser", null, null),
+            row(Feature.FIND, "Find my phone and open on phone", "Ring this phone, or open a link, number or map on it", null, null),
         )
         SettingsScreen(
             rows = rows,
@@ -203,6 +208,9 @@ class MainActivity : FragmentActivity() {
         Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS,
     ).all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
 
+    private fun contactsGranted(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+
     private fun onFeatureEnabled(feature: Feature, force: Boolean = false) {
         when (feature) {
             Feature.NOTIFICATIONS ->
@@ -215,6 +223,8 @@ class MainActivity : FragmentActivity() {
                         arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS),
                     )
                 }
+            Feature.CONTACTS ->
+                if (!contactsGranted()) smsPermissions.launch(arrayOf(Manifest.permission.READ_CONTACTS))
             else -> Unit
         }
     }

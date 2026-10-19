@@ -95,6 +95,7 @@ class GalleryServer(
         deviceApi(session, uri, method)?.let { return it }
 
         if (uri == "/api/photos" && method == Method.GET) return listPhotos(session)
+        if (uri == "/api/albums" && method == Method.GET) return json(Status.OK, JsonExtras.albums(catalog.total(), catalog.albums()))
 
         PHOTO_ROUTE.matchEntire(uri)?.let { m ->
             if (method != Method.GET) return text(Status.METHOD_NOT_ALLOWED, "Method not allowed")
@@ -126,6 +127,7 @@ class GalleryServer(
                 limit = limit,
                 sort = SortOrder.parse(p["sort"]?.firstOrNull()),
                 filter = PhotoFilter.parse(p["filter"]?.firstOrNull()),
+                bucket = p["bucket"]?.firstOrNull()?.takeIf { it.isNotEmpty() },
             )
         } catch (_: IllegalArgumentException) {
             return json(Status.BAD_REQUEST, "{\"error\":\"bad cursor\"}")
@@ -266,12 +268,13 @@ class GalleryServer(
         cookieValue(session, UNLOCK_COOKIE)?.let { constantTimeEquals(it, unlockToken) } == true
 
     private fun featureFor(uri: String): Feature? = when {
-        uri == "/api/photos" || uri.startsWith("/api/photos/") || uri == "/api/download" || uri.startsWith("/api/trash") -> Feature.PHOTOS
+        uri == "/api/photos" || uri.startsWith("/api/photos/") || uri == "/api/albums" || uri == "/api/download" || uri.startsWith("/api/trash") -> Feature.PHOTOS
         uri.startsWith("/api/notifications") -> Feature.NOTIFICATIONS
         uri.startsWith("/api/sms") -> Feature.MESSAGES
+        uri == "/api/contacts" -> Feature.CONTACTS
         uri.startsWith("/api/files") || uri.startsWith("/api/clipboard") -> Feature.FILES
         uri == "/api/status" -> Feature.STATUS
-        uri.startsWith("/api/find") -> Feature.FIND
+        uri.startsWith("/api/find") || uri == "/api/open" -> Feature.FIND
         else -> null
     }
 
@@ -365,6 +368,24 @@ class GalleryServer(
             val text = JsonFields.string(readRaw(session), "text")
             if (text == null || text.length > MAX_CLIPBOARD) return json(Status.BAD_REQUEST, "{\"error\":\"text required\"}")
             return if (p.setPhoneClipboard(text)) json(Status.OK, "{\"ok\":true}") else json(Status.INTERNAL_ERROR, "{\"error\":\"failed\"}")
+        }
+
+        // contacts
+        if (uri == "/api/contacts" && method == Method.GET) {
+            val p = services.contacts ?: return unavailable()
+            val ok = p.hasPermission()
+            return json(Status.OK, JsonExtras.contacts(ok, if (ok) p.list() else emptyList()))
+        }
+
+        // open a link, the dialer or a map search on the phone
+        if (uri == "/api/open" && method == Method.POST) {
+            val p = services.open ?: return unavailable()
+            val raw = readRaw(session)
+            val kind = JsonFields.string(raw, "kind")
+            val value = JsonFields.string(raw, "value")?.trim()
+            val problem = OpenRequests.validate(kind, value)
+            if (problem != null) return json(Status.BAD_REQUEST, JsonExtras.error(problem))
+            return if (p.open(kind!!, value!!)) json(Status.OK, "{\"ok\":true}") else json(Status.INTERNAL_ERROR, JsonExtras.error("Could not open it on the phone."))
         }
 
         // find my phone
