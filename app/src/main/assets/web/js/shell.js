@@ -62,6 +62,10 @@ export const shell = {
     $('search').addEventListener('input', onSearch);
 
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && mobile.matches && $('body').classList.contains('pane-open')) {
+        this.togglePane(false);
+        return;
+      }
       const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
       if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
