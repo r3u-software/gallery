@@ -10,11 +10,14 @@ const CHECK_SVG =
 export class Grid {
   /**
    * @param {HTMLElement} root
-   * @param {{ onActivate(ev): void, onSelectRange(from:number,to:number): void, getTopInset(): number }} handlers
+   * @param {{ onActivate(ev): void, onSelectRange(from:number,to:number): void }} handlers
+   * @param {HTMLElement} scroller the element that scrolls the grid (the content area)
    */
-  constructor(root, handlers) {
+  constructor(root, handlers, scroller) {
     this.root = root;
     this.h = handlers;
+    this.scroller = scroller;
+    this.scale = 1;
     this.items = [];
     this.indexById = new Map();
     this.layout = { blocks: [], tiles: [], height: 0 };
@@ -24,7 +27,7 @@ export class Grid {
     this.focusId = null;
     this.raf = 0;
 
-    window.addEventListener('scroll', () => this.schedule(), { passive: true });
+    scroller.addEventListener('scroll', () => this.schedule(), { passive: true });
     new ResizeObserver(() => {
       const w = this.root.clientWidth;
       if (w !== this.width) this.relayout();
@@ -79,7 +82,8 @@ export class Grid {
 
   relayout() {
     this.width = this.root.clientWidth;
-    const targetH = this.width < 560 ? 130 : this.width < 1100 ? 190 : 230;
+    const base = this.width < 560 ? 130 : this.width < 1100 ? 190 : 230;
+    const targetH = Math.round(base * this.scale);
     this.layout = buildLayout(this.items, this.width, { gap: 4, targetH });
     this.root.style.height = `${this.layout.height}px`;
     // Existing nodes are kept and repositioned by render(); stale ones are dropped there.
@@ -96,10 +100,10 @@ export class Grid {
 
   render() {
     const { blocks } = this.layout;
-    const rootTop = this.root.getBoundingClientRect().top + window.scrollY;
-    const viewTop = window.scrollY - rootTop;
-    const lo = viewTop - window.innerHeight;
-    const hi = viewTop + window.innerHeight * 2;
+    const viewH = this.scroller.clientHeight || window.innerHeight;
+    const viewTop = this.scroller.scrollTop - this.rootOffset();
+    const lo = viewTop - viewH;
+    const hi = viewTop + viewH * 2;
 
     // First block that ends below `lo` (blocks are sorted by y).
     let a = 0;
@@ -313,18 +317,28 @@ export class Grid {
     this.nodes.get(`t${this.focusId}`)?.focus({ preventScroll: true });
   }
 
+  /** Distance from the top of the scrolling content area to the top of the grid. */
+  rootOffset() {
+    return this.root.getBoundingClientRect().top - this.scroller.getBoundingClientRect().top + this.scroller.scrollTop;
+  }
+
+  setScale(scale) {
+    this.scale = Math.max(0.6, Math.min(1.8, scale));
+    this.relayout();
+  }
+
   scrollToIndex(idx, center = false) {
     const t = this.layout.tiles[idx];
     if (!t) return;
-    const rootTop = this.root.getBoundingClientRect().top + window.scrollY;
-    const top = rootTop + t.y;
-    const inset = this.h.getTopInset() + 12;
+    const top = this.rootOffset() + t.y;
+    const viewH = this.scroller.clientHeight || window.innerHeight;
+    const st = this.scroller.scrollTop;
     if (center) {
-      window.scrollTo({ top: top - (window.innerHeight - t.h) / 2 });
-    } else if (top < window.scrollY + inset) {
-      window.scrollTo({ top: top - inset });
-    } else if (top + t.h > window.scrollY + window.innerHeight - 12) {
-      window.scrollTo({ top: top + t.h - window.innerHeight + 24 });
+      this.scroller.scrollTo({ top: top - (viewH - t.h) / 2 });
+    } else if (top < st + 12) {
+      this.scroller.scrollTo({ top: top - 12 });
+    } else if (top + t.h > st + viewH - 12) {
+      this.scroller.scrollTo({ top: top + t.h - viewH + 24 });
     }
   }
 }

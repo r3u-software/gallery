@@ -33,7 +33,7 @@ let photos = Array.from({ length: COUNT }, (_, i) => {
     size: i % 11 === 0 ? 6_500_000 : 2_300_000,
     width: shot ? 1080 : w,
     height: shot ? 2340 : h,
-    bucket: shot ? 'Screenshots' : 'Camera',
+    bucket: shot ? 'Screenshots' : ['Camera', 'Camera', 'WhatsApp Images', 'Downloads', 'Camera', 'Facebook'][i % 6],
     mime: shot ? 'image/png' : 'image/jpeg',
     isShot: shot,
   };
@@ -97,10 +97,17 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname.startsWith('/api/') && (await handlePhase1(req, url, send, json))) return;
 
+  if (url.pathname === '/api/albums') {
+    const counts = new Map();
+    for (const p of photos) counts.set(p.bucket, (counts.get(p.bucket) || 0) + 1);
+    const items = [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return json(200, { total: photos.length, items });
+  }
   if (url.pathname === '/api/photos') {
     const q = url.searchParams;
     const filter = q.get('filter') || 'all';
-    let list = photos.filter((p) => filter === 'all' || (filter === 'screenshots' ? p.isShot : p.size > 5 * 1024 * 1024)).sort(cmp);
+    const bucket = q.get('bucket') || '';
+    let list = photos.filter((p) => (filter === 'all' || (filter === 'screenshots' ? p.isShot : p.size > 5 * 1024 * 1024)) && (!bucket || p.bucket === bucket)).sort(cmp);
     if (q.get('sort') === 'oldest') list.reverse();
     let start = 0;
     const c = q.get('cursor');

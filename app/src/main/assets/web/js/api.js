@@ -11,9 +11,17 @@ const unauthorizedHandlers = new Set();
 export const onUnauthorized = (fn) => unauthorizedHandlers.add(fn);
 const lockedHandlers = new Set();
 export const onLocked = (fn) => lockedHandlers.add(fn);
+const networkHandlers = new Set();
+export const onNetworkError = (fn) => networkHandlers.add(fn);
 
 async function request(path, options = {}) {
-  const res = await fetch(path, { credentials: 'same-origin', cache: 'no-store', ...options });
+  let res;
+  try {
+    res = await fetch(path, { credentials: 'same-origin', cache: 'no-store', ...options });
+  } catch (err) {
+    if (err.name !== 'AbortError') networkHandlers.forEach((fn) => fn());
+    throw err;
+  }
   if (res.status === 401) {
     unauthorizedHandlers.forEach((fn) => fn());
     throw new ApiError(401);
@@ -51,9 +59,10 @@ export const thumbUrl = (id) => `/api/photos/${id}/thumb`;
 export const fullUrl = (id) => `/api/photos/${id}/full`;
 export const downloadUrl = (id) => `/api/photos/${id}/download`;
 
-export async function fetchPage({ cursor, limit = 1000, sort, filter, signal }) {
+export async function fetchPage({ cursor, limit = 1000, sort, filter, bucket, signal }) {
   const q = new URLSearchParams({ limit: String(limit), sort, filter });
   if (cursor) q.set('cursor', cursor);
+  if (bucket) q.set('bucket', bucket);
   return (await request(`/api/photos?${q}`, { signal })).json();
 }
 
@@ -100,3 +109,8 @@ export function downloadIds(ids) {
   form.submit();
   form.remove();
 }
+
+export const fetchAlbums = () => getJSON('/api/albums');
+export const fetchContacts = () => getJSON('/api/contacts');
+export const logout = () => sendJSON('/api/logout', {});
+export const openOnPhone = (kind, value) => sendJSON('/api/open', { kind, value });

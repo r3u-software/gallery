@@ -4,7 +4,7 @@
 
 const UNLOCK = 'gallery_unlock';
 const PASSCODE = process.env.PASSCODE || '';
-const FEATURES = { photos: true, notifications: true, messages: true, files: true, status: true, find: true };
+const FEATURES = { photos: true, notifications: true, messages: true, contacts: true, files: true, status: true, find: true };
 for (const f of (process.env.OFF || '').split(',').filter(Boolean)) FEATURES[f] = false;
 const fails = { n: 0, until: 0 };
 
@@ -31,6 +31,14 @@ let phoneFiles = [{ id: 1, name: 'notes.txt', size: 1234, modified: Date.now() -
 let fileId = 2;
 const clip = { text: 'https://example.com/shared-from-phone', time: Date.now() };
 let ringing = false;
+const contacts = [
+  { id: 1, name: 'Ana Reyes', numbers: ['+63 917 555 0142', '+63 2 8555 0190'], emails: ['ana.reyes@example.com'] },
+  { id: 2, name: 'Bea Santos', numbers: ['+63 918 555 0121'], emails: [] },
+  { id: 3, name: 'Carlo Dizon', numbers: ['+63 920 555 0177'], emails: ['carlo@example.com'] },
+  { id: 4, name: 'Mama', numbers: ['+63 917 555 0100'], emails: [] },
+  { id: 5, name: 'Rico Lim', numbers: ['+63 922 555 0166'], emails: ['rico.lim@example.com'] },
+  { id: 6, name: 'Tita Joy', numbers: ['+63 915 555 0133'], emails: [] },
+];
 
 const readBody = (req) => new Promise((res) => { let b = ''; req.on('data', (d) => (b += d)); req.on('end', () => res(b)); });
 const field = (raw, k) => { try { return JSON.parse(raw)[k]; } catch { return undefined; } };
@@ -38,10 +46,11 @@ const field = (raw, k) => { try { return JSON.parse(raw)[k]; } catch { return un
 const featureOf = (p) =>
   p.startsWith('/api/notifications') ? 'notifications'
     : p.startsWith('/api/sms') ? 'messages'
+      : p === '/api/contacts' ? 'contacts'
       : p.startsWith('/api/files') || p.startsWith('/api/clipboard') ? 'files'
         : p === '/api/status' ? 'status'
-          : p.startsWith('/api/find') ? 'find'
-            : p.startsWith('/api/photos') || p === '/api/download' || p.startsWith('/api/trash') ? 'photos'
+          : p.startsWith('/api/find') || p === '/api/open' ? 'find'
+            : p.startsWith('/api/photos') || p === '/api/albums' || p === '/api/download' || p.startsWith('/api/trash') ? 'photos'
               : null;
 
 /** Returns true when the request was handled. */
@@ -112,6 +121,16 @@ export async function handlePhase1(req, url, send, json) {
   }
   if (p === '/api/clipboard' && req.method === 'GET') { json(200, clip); return true; }
   if (p === '/api/clipboard' && req.method === 'POST') { await readBody(req); json(200, { ok: true }); return true; }
+  if (p === '/api/contacts') { json(200, { permission: true, items: contacts }); return true; }
+  if (p === '/api/open') {
+    const raw = await readBody(req);
+    const kind = field(raw, 'kind');
+    const value = String(field(raw, 'value') || '').trim();
+    if (kind === 'link' && !/^https?:\/\/[^\s]+$/i.test(value)) { json(400, { error: 'Only http and https links can be opened.' }); return true; }
+    if (kind === 'dial' && !/^[+0-9 ()-]{3,24}$/.test(value)) { json(400, { error: 'Enter a valid phone number.' }); return true; }
+    json(200, { ok: true });
+    return true;
+  }
   if (p === '/api/find' && req.method === 'GET') { json(200, { ringing }); return true; }
   if (p === '/api/find/ring') { await readBody(req); ringing = true; json(200, { ringing }); return true; }
   if (p === '/api/find/stop') { await readBody(req); ringing = false; json(200, { ringing }); return true; }

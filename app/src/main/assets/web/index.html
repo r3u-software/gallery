@@ -7,103 +7,158 @@
   <title>R3U | Phone Link</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/shell.css">
 </head>
 <body>
-  <a class="skip" href="#grid">Skip to photos</a>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+    <symbol id="i-checksq" viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+    <symbol id="i-zoomin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></symbol>
+    <symbol id="i-zoomout" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
+    <symbol id="i-chevl" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-call" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs></svg>
 
-  <header class="topbar" id="topbar">
-    <div class="brand">
-      <h1><span class="logo" aria-hidden="true"></span>R3U<span class="sep">|</span><span class="grad">Phone Link</span></h1>
-      <span class="count" id="count" aria-live="polite">Loading…</span>
-    </div>
+  <a class="skip" href="#contentArea">Skip to content</a>
 
-    <nav class="tabs" id="tabs" aria-label="Sections">
-      <button type="button" class="tab" data-tab="photos" aria-selected="true">Photos</button>
-      <button type="button" class="tab" data-tab="notifications" aria-selected="false">Notifications<span class="badge" id="notifBadge" hidden>0</span></button>
-      <button type="button" class="tab" data-tab="messages" aria-selected="false">Messages</button>
-      <button type="button" class="tab" data-tab="files" aria-selected="false">Files</button>
-      <button type="button" class="tab" data-tab="status" aria-selected="false">Phone</button>
-    </nav>
-
-    <div class="controls" id="photoControls">
-      <div class="chips" role="group" aria-label="Filter photos" id="chips">
-        <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
-        <button type="button" class="chip" data-filter="screenshots" aria-pressed="false">Screenshots</button>
-        <button type="button" class="chip" data-filter="large" aria-pressed="false">Large files <span class="chip-note">&gt; 5 MB</span></button>
+  <div class="app">
+    <header class="ribbon" id="ribbon">
+      <div class="topline">
+        <button type="button" class="iconbtn mobile-only" id="paneBtn" aria-label="Show list" aria-expanded="false"><svg class="ic"><use href="#i-panel"></use></svg></button>
+        <div class="brand"><span class="logo" aria-hidden="true"></span><span>R3U</span><span class="sep">|</span><span class="grad">Phone Link</span></div>
+        <nav class="rtabs" id="rtabs" aria-label="Ribbon tabs">
+          <button type="button" class="rtab on" data-rtab="home">Home</button>
+          <button type="button" class="rtab" data-rtab="view">View</button>
+          <button type="button" class="rtab" data-rtab="tools">Tools</button>
+        </nav>
+        <label class="search">
+          <svg class="ic"><use href="#i-search"></use></svg>
+          <span class="sr">Search this section</span>
+          <input id="search" type="search" placeholder="Search" autocomplete="off">
+        </label>
+        <div class="devpill" id="devpill"><span class="dot"></span><span id="devName">Phone</span></div>
       </div>
-      <label class="select">
-        <span class="sr">Sort order</span>
-        <select id="sort">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-        </select>
-      </label>
-      <button type="button" class="btn ghost" id="selectAll">Select all</button>
+      <div class="cmdrow" id="cmdrow" role="toolbar" aria-label="Commands"></div>
+    </header>
+
+    <div class="body" id="body">
+      <nav class="rail" id="rail" aria-label="Apps"></nav>
+
+      <aside class="pane" id="pane" aria-label="List">
+        <div class="phead"><b id="paneTitle">Albums</b><button type="button" class="iconbtn" id="paneCollapse" aria-label="Hide list"><svg class="ic"><use href="#i-chevl"></use></svg></button></div>
+        <div class="pane-body" id="paneBody"></div>
+      </aside>
+      <div class="pane-scrim" id="paneScrim" hidden></div>
+
+      <main class="content" id="contentArea" tabindex="-1">
+        <!-- Photos -->
+        <section class="view" id="view-photos" hidden aria-label="Photos">
+          <div class="ctitle"><h1 id="photosTitle">All photos</h1><span class="muted" id="photosSub"></span></div>
+          <div id="skeleton" class="skeleton" aria-hidden="true"></div>
+          <div id="grid" class="grid" role="grid" aria-label="Photos" aria-multiselectable="true"></div>
+          <div id="empty" class="empty" hidden>
+            <div class="empty-art" aria-hidden="true"></div>
+            <h2>No photos here</h2>
+            <p id="emptyText">Nothing matches this filter.</p>
+          </div>
+          <p id="loadingMore" class="loading-more" hidden>Loading more photos…</p>
+        </section>
+
+        <!-- Notifications -->
+        <section class="view" id="view-notifications" hidden aria-label="Notifications">
+          <div class="ctitle"><h1>Notifications</h1><span class="muted" id="notifHint"></span></div>
+          <div id="notifList" class="stack"></div>
+        </section>
+
+        <!-- Messages -->
+        <section class="view view-chat" id="view-messages" hidden aria-label="Messages">
+          <div class="ctitle"><h1>Messages</h1><span class="muted" id="msgHint"></span></div>
+          <div class="chat">
+            <div class="convo-empty" id="convoEmpty">Select a conversation</div>
+            <div class="chead" id="convoHead" hidden></div>
+            <div class="bubbles" id="bubbles" hidden></div>
+            <form class="composer" id="composer" hidden>
+              <label class="sr" for="composeText">Message</label>
+              <textarea id="composeText" rows="1" placeholder="Type a message" maxlength="1000"></textarea>
+              <button type="submit" class="btn" id="composeSend"><svg class="ic"><use href="#i-send"></use></svg>Send</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Contacts -->
+        <section class="view" id="view-contacts" hidden aria-label="Contacts">
+          <div class="ctitle"><h1>Contacts</h1><span class="muted" id="contactsHint"></span></div>
+          <div id="contactCard"></div>
+        </section>
+
+        <!-- Files -->
+        <section class="view" id="view-files" hidden aria-label="Files">
+          <div class="ctitle"><h1 id="filesTitle">Files</h1><span class="muted">Send files to the phone, or share from any app on the phone to R3U | Phone Link to get them here.</span></div>
+          <div id="filesBox">
+            <label class="drop" id="drop" for="fileInput">
+              <input type="file" id="fileInput" multiple hidden>
+              <strong>Drop files here</strong><span>or click to choose</span>
+              <div class="progress" id="uploadProgress" hidden><div class="bar" id="uploadBar"></div></div>
+            </label>
+            <div id="fileList" class="stack"></div>
+          </div>
+          <div class="clip" id="clipBox" hidden>
+            <div class="clip-card"><span class="eyebrow">From phone</span><p id="clipFromPhone" class="clip-text">Nothing shared yet. Share text to R3U | Phone Link on the phone.</p><button type="button" class="btn ghost" id="clipCopy" hidden>Copy</button></div>
+            <div class="clip-card"><span class="eyebrow">To phone</span><textarea id="clipToPhone" rows="3" placeholder="Type or paste text to put on the phone's clipboard"></textarea><button type="button" class="btn" id="clipSend">Send to phone</button></div>
+          </div>
+        </section>
+
+        <!-- Phone -->
+        <section class="view" id="view-phone" hidden aria-label="Phone">
+          <div class="ctitle"><h1 id="deviceName">Phone</h1><span class="muted" id="deviceModel"></span></div>
+          <div class="status-grid" id="statusGrid"></div>
+          <div class="find" id="findCard">
+            <div><h3>Find my phone</h3><p class="muted">Rings at full volume for up to a minute.</p></div>
+            <button type="button" class="btn" id="findBtn">Ring phone</button>
+          </div>
+          <div class="find" id="openCard">
+            <div><h3>Open on the phone</h3><p class="muted">Open a link, the dialer or a map on the phone. You then use it on the phone itself.</p></div>
+            <div class="btn-row">
+              <button type="button" class="btn ghost" data-open="link"><svg class="ic"><use href="#i-link"></use></svg>Link</button>
+              <button type="button" class="btn ghost" data-open="dial"><svg class="ic"><use href="#i-call"></use></svg>Number</button>
+              <button type="button" class="btn ghost" data-open="map"><svg class="ic"><use href="#i-map"></use></svg>Map</button>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-  </header>
 
-  <main id="main">
-   <section id="tab-photos" class="tabpanel">
-    <div id="skeleton" class="skeleton" aria-hidden="true"></div>
-    <div id="grid" class="grid" role="grid" aria-label="Photos" aria-multiselectable="true"></div>
-    <div id="empty" class="empty" hidden>
-      <div class="empty-art" aria-hidden="true"></div>
-      <h2>No photos here</h2>
-      <p id="emptyText">Nothing matches this filter.</p>
-    </div>
-    <p id="loadingMore" class="loading-more" hidden>Loading more photos…</p>
-   </section>
-
-   <section id="tab-notifications" class="tabpanel panel" hidden aria-label="Notifications">
-    <div class="panel-head"><h2>Notifications</h2><p class="muted" id="notifHint"></p></div>
-    <div id="notifList" class="stack"></div>
-   </section>
-
-   <section id="tab-messages" class="tabpanel panel messages" hidden aria-label="Messages">
-    <div class="threads" id="threadList" role="list"></div>
-    <div class="convo" id="convo">
-      <div class="convo-empty" id="convoEmpty">Select a conversation</div>
-      <div class="convo-head" id="convoHead" hidden></div>
-      <div class="bubbles" id="bubbles" hidden></div>
-      <form class="composer" id="composer" hidden>
-        <label class="sr" for="composeText">Message</label>
-        <textarea id="composeText" rows="1" placeholder="Type a message" maxlength="1000"></textarea>
-        <button type="submit" class="btn" id="composeSend">Send</button>
-      </form>
-    </div>
-   </section>
-
-   <section id="tab-files" class="tabpanel panel" hidden aria-label="Files">
-    <div class="panel-head"><h2>Files</h2><p class="muted">Send files to the phone, or share from any app on the phone to R3U | Phone Link to get them here.</p></div>
-    <label class="drop" id="drop" for="fileInput">
-      <input type="file" id="fileInput" multiple hidden>
-      <strong>Drop files here</strong><span>or click to choose</span>
-      <div class="progress" id="uploadProgress" hidden><div class="bar" id="uploadBar"></div></div>
-    </label>
-    <div id="fileList" class="stack"></div>
-    <div class="clip">
-      <h3>Clipboard</h3>
-      <div class="clip-card"><span class="eyebrow">From phone</span><p id="clipFromPhone" class="clip-text">Nothing shared yet. Share text to R3U | Phone Link on the phone.</p><button type="button" class="btn ghost" id="clipCopy" hidden>Copy</button></div>
-      <div class="clip-card"><span class="eyebrow">To phone</span><textarea id="clipToPhone" rows="3" placeholder="Type or paste text to put on the phone's clipboard"></textarea><button type="button" class="btn" id="clipSend">Send to phone</button></div>
-    </div>
-   </section>
-
-   <section id="tab-status" class="tabpanel panel" hidden aria-label="Phone">
-    <div class="panel-head"><h2 id="deviceName">Phone</h2><p class="muted" id="deviceModel"></p></div>
-    <div class="status-grid" id="statusGrid"></div>
-    <div class="find" id="findCard">
-      <div><h3>Find my phone</h3><p class="muted">Rings at full volume for up to a minute.</p></div>
-      <button type="button" class="btn" id="findBtn">Ring phone</button>
-    </div>
-   </section>
-  </main>
-
-  <!-- Selection bar -->
-  <div class="selbar" id="selbar" aria-hidden="true">
-    <span class="selbar-count" id="selCount" aria-live="polite">0 selected</span>
-    <button type="button" class="btn" id="selDownload">Download</button>
-    <button type="button" class="btn danger" id="selTrash">Move to trash</button>
-    <button type="button" class="btn ghost" id="selClear">Clear</button>
+    <footer class="status" id="statusbar">
+      <span class="ok" id="stConn"><span class="dot"></span>Connected</span>
+      <span id="stDevice">Phone</span>
+      <span id="stBattery" hidden></span>
+      <span class="spacer"></span>
+      <span id="stInfo"></span>
+    </footer>
   </div>
 
   <!-- Photo viewer -->
@@ -130,7 +185,7 @@
     </div>
   </div>
 
-  <!-- Confirm trash -->
+  <!-- Confirm (trash and other destructive actions) -->
   <dialog id="confirm" class="modal" aria-labelledby="confirmTitle">
     <form method="dialog">
       <h2 id="confirmTitle">Move to trash?</h2>
@@ -150,6 +205,54 @@
       <p>Android is asking you to confirm moving <strong id="waitingCount"></strong> to the trash. If you don't see it, open the R3U | Phone Link app.</p>
       <div class="modal-actions">
         <button type="button" class="btn ghost" id="waitingStop">Stop waiting</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Open on phone -->
+  <dialog id="openDialog" class="modal" aria-labelledby="openTitle">
+    <form id="openForm" method="dialog">
+      <h2 id="openTitle">Open on the phone</h2>
+      <p id="openHelp"></p>
+      <label class="sr" for="openValue">Value</label>
+      <input id="openValue" type="text" class="field" autocomplete="off">
+      <p class="field-error" id="openError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="openCancel">Cancel</button>
+        <button type="submit" class="btn" id="openGo">Open on phone</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- New message -->
+  <dialog id="newMsgDialog" class="modal" aria-labelledby="newMsgTitle">
+    <form id="newMsgForm" method="dialog">
+      <h2 id="newMsgTitle">New message</h2>
+      <label for="newMsgTo" class="field-label">To</label>
+      <input id="newMsgTo" type="text" class="field" placeholder="+63 917 555 0142" autocomplete="off">
+      <label for="newMsgBody" class="field-label">Message</label>
+      <textarea id="newMsgBody" class="field" rows="4" maxlength="1000"></textarea>
+      <p class="field-error" id="newMsgError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="newMsgCancel">Cancel</button>
+        <button type="submit" class="btn" id="newMsgSend">Send</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Connection help -->
+  <dialog id="helpDialog" class="modal" aria-labelledby="helpTitle">
+    <div>
+      <h2 id="helpTitle">Can't reach your phone</h2>
+      <ol class="help-steps">
+        <li>Check that the R3U | Phone Link app is open and shows <b>Running</b>.</li>
+        <li>Unlock the phone and keep it awake for a moment.</li>
+        <li>Make sure the phone and this computer are on the <b>same Wi-Fi</b>.</li>
+        <li>If the link changed, open the new link or scan the QR code again.</li>
+      </ol>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="helpClose">Close</button>
+        <button type="button" class="btn" id="helpRetry">Try again</button>
       </div>
     </div>
   </dialog>

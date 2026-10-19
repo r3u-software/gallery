@@ -59,6 +59,9 @@ shot a1-running
 tap_text "Features and passcode"
 shot a2-features
 
+# more switches than fit on screen: scroll down to the passcode button
+adb shell input swipe 540 1900 540 500 300
+sleep 1
 tap_text "Change web passcode"
 shot a3-passcode
 tap_text "Cancel" || true

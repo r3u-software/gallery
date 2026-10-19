@@ -31,6 +31,9 @@ async function shot(page, name) {
   console.log('shot', name);
 }
 
+const cmd = (page, label) => page.locator('#cmdrow .cmd', { hasText: label }).first();
+const rail = (page, app) => page.locator(`#rail [data-app="${app}"]`);
+
 async function login(page) {
   await page.goto(`${BASE}/?t=dev`);
   await page.waitForSelector('#lock:not([hidden])', { timeout: 10000 });
@@ -54,7 +57,7 @@ async function desktopTour(browser, scheme) {
   await shot(page, `02-photos${sfx}`);
   if (scheme === 'dark') { await ctx.close(); return; }
 
-  // selection
+  // selection and the ribbon
   const checks = page.locator('.tile .check');
   await checks.nth(1).click({ force: true });
   await checks.nth(3).click({ force: true });
@@ -62,7 +65,7 @@ async function desktopTour(browser, scheme) {
   await shot(page, '03-selection');
 
   // trash flow
-  await page.click('#selTrash');
+  await cmd(page, 'Move to trash').click();
   await page.waitForSelector('#confirm[open]');
   await shot(page, '04-trash-confirm');
   await page.click('#confirmOk');
@@ -86,28 +89,33 @@ async function desktopTour(browser, scheme) {
   await page.keyboard.press('Escape');
   await sleep(300);
 
-  // filters
-  await page.click('[data-filter=screenshots]');
-  await sleep(600);
-  await shot(page, '09-filter-screenshots');
-  await page.click('[data-filter=all]');
-  await sleep(400);
+  // an album
+  await page.locator('#paneBody .pitem').nth(2).click();
+  await sleep(900);
+  await shot(page, '09-album');
 
-  // tabs
-  await page.click('[data-tab=notifications]');
+  // the other apps
+  await rail(page, 'notifications').click();
   await page.waitForSelector('.notif');
   await shot(page, '10-notifications');
-  await page.click('[data-tab=messages]');
-  await page.waitForSelector('.thread');
-  await page.locator('.thread').first().click();
+  await rail(page, 'messages').click();
+  await page.waitForSelector('#paneBody .trow');
+  await page.locator('#paneBody .trow').first().click();
   await page.waitForSelector('.bubble');
   await shot(page, '11-messages');
-  await page.click('[data-tab=files]');
+  await rail(page, 'contacts').click();
+  await page.waitForSelector('.cname');
+  await shot(page, '12-contacts');
+  await rail(page, 'files').click();
   await page.waitForSelector('.file');
-  await shot(page, '12-files');
-  await page.click('[data-tab=status]');
+  await shot(page, '13-files');
+  await rail(page, 'phone').click();
   await page.waitForSelector('.meter');
-  await shot(page, '13-phone');
+  await shot(page, '14-phone');
+  await cmd(page, 'Open link').click();
+  await page.waitForSelector('#openDialog[open]');
+  await page.fill('#openValue', 'https://example.com/welcome');
+  await shot(page, '15-open-on-phone');
   await ctx.close();
 }
 
@@ -116,18 +124,25 @@ async function mobileTour(browser) {
   const page = await ctx.newPage();
   await login(page);
   await unlock(page);
-  await shot(page, '14-mobile-photos');
-  await page.click('[data-tab=notifications]');
+  await shot(page, '16-mobile-photos');
+  await page.click('#paneBtn');
+  await sleep(500);
+  await shot(page, '17-mobile-albums');
+  await page.click('#paneScrim', { position: { x: 360, y: 400 } });
+  await sleep(400);
+  await rail(page, 'notifications').click();
   await page.waitForSelector('.notif');
-  await shot(page, '15-mobile-notifications');
-  await page.click('[data-tab=messages]');
-  await page.waitForSelector('.thread');
-  await shot(page, '16-mobile-messages');
+  await shot(page, '18-mobile-notifications');
+  await rail(page, 'messages').click();
+  await page.waitForSelector('#paneBody .trow', { state: 'attached' });
+  await page.click('#paneBtn');
+  await sleep(500);
+  await shot(page, '19-mobile-messages');
   await ctx.close();
 }
 
 const browser = await chromium.launch();
-let server = await startServer({ PASSCODE: 'letmein' });
+const server = await startServer({ PASSCODE: 'letmein' });
 try {
   await desktopTour(browser, 'light');
   await desktopTour(browser, 'dark');
