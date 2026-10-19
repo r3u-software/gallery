@@ -4,13 +4,13 @@
 
 html, body { height: 100%; }
 body { overflow: hidden; }
-.app { height: 100vh; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) 34px; background: transparent; }
+.app { height: 100vh; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) 34px; background: transparent; }
 .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .mobile-only { display: none; }
 .sep { color: var(--muted); font-weight: 300; margin: 0 2px; }
 
 /* ribbon */
-.ribbon { background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); z-index: 20; }
+.ribbon { min-width: 0; background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); z-index: 20; }
 .topline { display: flex; align-items: center; gap: 18px; padding: 8px 16px 0; }
 .brand { display: flex; align-items: center; gap: 7px; font-size: 17px; letter-spacing: -0.02em; font-weight: 700; min-width: 168px; white-space: nowrap; }
 .brand .logo { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); position: relative; margin-right: 3px; }
