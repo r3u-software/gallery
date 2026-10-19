@@ -27,7 +27,7 @@ class ShareReceiverActivity : ComponentActivity() {
 
     private fun handle(intent: Intent): String {
         if (!FeaturePrefs(this).isEnabled(Feature.FILES)) {
-            return "Turn on Files in R3U Gallery settings first"
+            return "Turn on Files in R3U | Phone Link settings first"
         }
         val streams = ArrayList<Uri>()
         when (intent.action) {

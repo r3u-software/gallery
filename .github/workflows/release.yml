@@ -83,7 +83,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/gallery.apk dist/gallery.apk.sha256 \
-            --title "Gallery ${GITHUB_REF_NAME}" --generate-notes --verify-tag
+            --title "R3U Phone Link ${GITHUB_REF_NAME}" --generate-notes --verify-tag
 
       # Releases created with GITHUB_TOKEN don't trigger other workflows, so refresh the landing page explicitly.
       - name: Refresh landing page (version + size)

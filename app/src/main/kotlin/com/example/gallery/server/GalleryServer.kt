@@ -557,8 +557,8 @@ class GalleryServer(
 
         private const val UNAUTHORIZED_HTML =
             "<!doctype html><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\">" +
-                "<title>R3U Gallery</title><body style=\"font-family:system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;" +
-                "color:#222\"><h1>Open the link from the app</h1><p>This page needs the private link shown in the Gallery " +
+                "<title>R3U | Phone Link</title><body style=\"font-family:system-ui;max-width:32rem;margin:15vh auto;padding:0 1.5rem;" +
+                "color:#222\"><h1>Open the link from the app</h1><p>This page needs the private link shown in the R3U | Phone Link " +
                 "app on your phone. Open that link (or scan its QR code) to get in.</p></body>"
 
         fun isBrowserSafe(mime: String): Boolean = when (mime.lowercase()) {

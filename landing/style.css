@@ -87,3 +87,5 @@ body { background: radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, v
 .btn { background: var(--grad); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent); }
 .card { background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 22px; }
 .num { background: var(--grad); color: #fff; }
+
+.hero h1 .sep { color: var(--muted); font-weight: 300; margin: 0 0.18em; }

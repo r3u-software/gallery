@@ -67,7 +67,7 @@ export const notifications = {
     $('notifHint').textContent = data.connected ? plural(data.items.length, 'notification', 'notifications') : '';
     list.replaceChildren();
     if (!data.connected) {
-      list.append(emptyState('Notification access is off', 'On the phone, open R3U Gallery, then Features and passcode, switch on Notifications and allow Notification access.'));
+      list.append(emptyState('Notification access is off', 'On the phone, open R3U | Phone Link, then Features and passcode, switch on Notifications and allow Notification access.'));
       return;
     }
     if (!data.items.length) {
@@ -145,7 +145,7 @@ export const messages = {
     const list = $('threadList');
     list.replaceChildren();
     if (!data.permission) {
-      list.append(emptyState('Messages are off', 'On the phone, open R3U Gallery, then Features and passcode, switch on Messages and allow SMS access.'));
+      list.append(emptyState('Messages are off', 'On the phone, open R3U | Phone Link, then Features and passcode, switch on Messages and allow SMS access.'));
       return;
     }
     this.threads = data.threads;
@@ -281,7 +281,7 @@ export const files = {
         try { await navigator.clipboard.writeText(c.text); toast('Copied'); } catch { toast('Select the text and copy it manually', { kind: 'error' }); }
       };
     } else {
-      p.textContent = 'Nothing shared yet. Share text to R3U Gallery on the phone.';
+      p.textContent = 'Nothing shared yet. Share text to R3U | Phone Link on the phone.';
       copy.hidden = true;
     }
   },

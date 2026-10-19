@@ -40,7 +40,7 @@ object Notifications {
         )
         return NotificationCompat.Builder(ctx, CHANNEL_SERVER)
             .setSmallIcon(R.drawable.ic_stat_gallery)
-            .setContentTitle("R3U Gallery is sharing your photos")
+            .setContentTitle("R3U | Phone Link is running")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

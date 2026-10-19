@@ -13,7 +13,7 @@ A browser dashboard served by the phone with five tabs: **Photos** (existing), *
 | Status | Device name, model, Android, battery, charging, storage | BatteryManager, StatFs | none |
 | Notifications | List, dismiss, reply | NotificationListenerService | user enables "Notification access" |
 | Messages | Threads, history, send | content://sms, SmsManager, ContactsContract | READ_SMS, SEND_SMS, READ_CONTACTS |
-| Files | Upload from PC, list, download, delete; send phone to PC through the Android Share sheet | MediaStore.Downloads (`Download/R3U Gallery/`), share-target activity | none |
+| Files | Upload from PC, list, download, delete; send phone to PC through the Android Share sheet | MediaStore.Downloads (`Download/R3U Phone Link/`), share-target activity | none |
 | Clipboard | PC to phone (set), phone to PC (share text to the app) | ClipboardManager, share-target | none |
 | Find phone | Ring at full volume, stop | MediaPlayer on the alarm stream, auto-stop at 60 s | none |
 
@@ -42,7 +42,7 @@ Order of checks per request: private IP, token cookie, **unlock cookie when a pa
 
 1. Phase 1 before any cloud work; sideload-only distribution (keeps SMS and notification access).
 2. Passcode applies to **all** web access, including photos, once set. Sensitive features are opt-in.
-3. Files tab uses a dedicated `Download/R3U Gallery` folder plus the Share sheet rather than free browsing of all storage (no broad storage permission).
+3. Files tab uses a dedicated `Download/R3U Phone Link` folder plus the Share sheet rather than free browsing of all storage (no broad storage permission).
 4. Clipboard from phone to PC works through the Share sheet, because Android blocks background clipboard reads.
 5. Notification reply only appears when the source app offers a reply action.
 6. Version becomes 1.1.0 when Phase 1 ships.

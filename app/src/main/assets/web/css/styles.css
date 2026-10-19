@@ -428,3 +428,6 @@ body {
 .thread { width: 100%; min-width: 0; }
 .thread-top, .thread-snip { min-width: 0; }
 .thread-top strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* brand separator in "R3U | Phone Link" */
+.brand h1 .sep { color: var(--muted); font-weight: 300; margin: 0 8px; }

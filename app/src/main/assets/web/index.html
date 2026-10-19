@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <title>R3U Gallery</title>
+  <title>R3U | Phone Link</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -13,7 +13,7 @@
 
   <header class="topbar" id="topbar">
     <div class="brand">
-      <h1><span class="logo" aria-hidden="true"></span>R3U <span class="grad">Gallery</span></h1>
+      <h1><span class="logo" aria-hidden="true"></span>R3U<span class="sep">|</span><span class="grad">Phone Link</span></h1>
       <span class="count" id="count" aria-live="polite">Loading…</span>
     </div>
 
@@ -74,7 +74,7 @@
    </section>
 
    <section id="tab-files" class="tabpanel panel" hidden aria-label="Files">
-    <div class="panel-head"><h2>Files</h2><p class="muted">Send files to the phone, or share from any app on the phone to R3U Gallery to get them here.</p></div>
+    <div class="panel-head"><h2>Files</h2><p class="muted">Send files to the phone, or share from any app on the phone to R3U | Phone Link to get them here.</p></div>
     <label class="drop" id="drop" for="fileInput">
       <input type="file" id="fileInput" multiple hidden>
       <strong>Drop files here</strong><span>or click to choose</span>
@@ -83,7 +83,7 @@
     <div id="fileList" class="stack"></div>
     <div class="clip">
       <h3>Clipboard</h3>
-      <div class="clip-card"><span class="eyebrow">From phone</span><p id="clipFromPhone" class="clip-text">Nothing shared yet. Share text to R3U Gallery on the phone.</p><button type="button" class="btn ghost" id="clipCopy" hidden>Copy</button></div>
+      <div class="clip-card"><span class="eyebrow">From phone</span><p id="clipFromPhone" class="clip-text">Nothing shared yet. Share text to R3U | Phone Link on the phone.</p><button type="button" class="btn ghost" id="clipCopy" hidden>Copy</button></div>
       <div class="clip-card"><span class="eyebrow">To phone</span><textarea id="clipToPhone" rows="3" placeholder="Type or paste text to put on the phone's clipboard"></textarea><button type="button" class="btn" id="clipSend">Send to phone</button></div>
     </div>
    </section>
@@ -158,7 +158,7 @@
   <div class="overlay" id="lock" hidden>
     <form class="overlay-card lock-card" id="lockForm">
       <h2>Enter passcode</h2>
-      <p>Enter the web passcode you set in the R3U Gallery app.</p>
+      <p>Enter the web passcode you set in the R3U | Phone Link app.</p>
       <label class="sr" for="passcode">Passcode</label>
       <input id="passcode" type="password" autocomplete="current-password" required>
       <p class="lock-error" id="lockError" role="alert" hidden></p>
@@ -170,7 +170,7 @@
   <div class="overlay" id="expired" hidden>
     <div class="overlay-card">
       <h2>Session ended</h2>
-      <p>Open the link (or scan the QR code) shown in the Gallery app on your phone to continue. If the server was restarted, the link has changed.</p>
+      <p>Open the link (or scan the QR code) shown in the R3U | Phone Link app on your phone to continue. If the server was restarted, the link has changed.</p>
     </div>
   </div>
 

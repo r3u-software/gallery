@@ -92,7 +92,7 @@ const server = http.createServer(async (req, res) => {
     return send(303, '', { Location: '/', 'Set-Cookie': `${COOKIE}=${TOKEN}; Path=/; HttpOnly; SameSite=Strict` });
   }
   if (!(req.headers.cookie || '').split(';').some((c) => c.trim() === `${COOKIE}=${TOKEN}`)) {
-    return send(401, 'Open the link shown in the Gallery app.', { 'Content-Type': 'text/html' });
+    return send(401, 'Open the link shown in the R3U | Phone Link app.', { 'Content-Type': 'text/html' });
   }
 
   if (url.pathname.startsWith('/api/') && (await handlePhase1(req, url, send, json))) return;

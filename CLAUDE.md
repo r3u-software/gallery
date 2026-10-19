@@ -1,6 +1,6 @@
 @../../BRAND-SYSTEM.md
 
-# Gallery — Android app + web gallery + landing page
+# R3U | Phone Link — Android app + web dashboard + landing page
 
 Browse an Android phone's photos from a desktop browser on the same Wi-Fi.
 The phone app runs an embedded HTTP server (NanoHTTPD) and serves the web

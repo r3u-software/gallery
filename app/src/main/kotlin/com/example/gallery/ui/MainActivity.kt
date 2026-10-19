@@ -275,8 +275,8 @@ class MainActivity : FragmentActivity() {
         )
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock R3U Gallery")
-                .setSubtitle("Confirm it’s you to start sharing your photos")
+                .setTitle("Unlock R3U | Phone Link")
+                .setSubtitle("Confirm it’s you to start sharing your phone")
                 .setAllowedAuthenticators(authenticators)
                 .build(),
         )
@@ -298,7 +298,7 @@ class MainActivity : FragmentActivity() {
     // ------------------------------------------------------------ helpers
 
     private fun copyLink(url: String) {
-        val clip = ClipData.newPlainText("Gallery link", url).apply {
+        val clip = ClipData.newPlainText("Phone Link address", url).apply {
             description.extras = PersistableBundle().apply {
                 putBoolean("android.content.extra.IS_SENSITIVE", true)
             }

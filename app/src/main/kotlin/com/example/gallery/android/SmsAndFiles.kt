@@ -111,7 +111,7 @@ class SmsProviderImpl(context: Context) : MessagesProvider {
 }
 
 /**
- * Files exchanged with the computer live in Download/R3U Gallery. Files the app created itself are
+ * Files exchanged with the computer live in Download/R3U Phone Link. Files the app created itself are
  * readable without any storage permission, so no broad storage access is requested.
  */
 class SharedFilesProvider(context: Context) : FilesProvider {
@@ -181,6 +181,6 @@ class SharedFilesProvider(context: Context) : FilesProvider {
 
     companion object {
         /** MediaStore RELATIVE_PATH values end with a slash. */
-        const val FOLDER = "Download/R3U Gallery/"
+        const val FOLDER = "Download/R3U Phone Link/"
     }
 }

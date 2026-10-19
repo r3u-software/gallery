@@ -49,7 +49,7 @@
             android:launchMode="singleTop"
             android:theme="@style/Theme.Gallery.Transparent" />
 
-        <!-- Receives "Share to R3U Gallery" from other apps: files go to the shared folder, text to the web clipboard. -->
+        <!-- Receives "Share to R3U | Phone Link" from other apps: files go to the shared folder, text to the web clipboard. -->
         <activity
             android:name=".ui.ShareReceiverActivity"
             android:exported="true"

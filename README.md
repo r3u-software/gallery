@@ -1,4 +1,4 @@
-# R3U Gallery
+# R3U | Phone Link
 
 Browse your Android phone's photos from a desktop browser on the same Wi-Fi: zoom, download, and move unwanted photos to the trash. No USB, no developer options, no ADB, no cloud. The phone app runs a small web server and serves the web UI itself.
 
@@ -94,7 +94,7 @@ The "Open gallery" box accepts only `http://<10.x | 172.16-31.x | 192.168.x>.x:<
 1. On the phone, open the landing page (or the repo's Releases page) and tap **Download APK**.
 2. When the browser warns, allow it to **Install unknown apps** (Settings → Apps → Special access → Install unknown apps → your browser).
 3. Open the downloaded file and tap **Install**. If **Play Protect** warns about an app from outside the Play Store, choose **Install anyway**.
-4. Open **Gallery**, choose **Allow all** for photos, and confirm with your fingerprint, face or passcode. The server starts automatically and shows a link and a QR code.
+4. Open **R3U | Phone Link**, choose **Allow all** for photos, and confirm with your fingerprint, face or passcode. The server starts automatically and shows a link and a QR code.
 5. On the computer (same Wi-Fi), paste the link into the landing page's *Open gallery* box, or type it into the browser directly.
 
 ## Changing the package id
@@ -113,7 +113,7 @@ Beyond photos, the web page now has tabs for **Notifications, Messages, Files an
 
 - **Web passcode.** After unlock the app asks you to set a passcode (6+ characters). The browser must enter it; 5 wrong tries lock that client out (30 s, doubling to 15 min). Only a salted hash is stored.
 - **Per-feature switches** (app: *Features and passcode*). Photos and Phone status start on; Notifications, Messages, Files and Find phone are off until you enable them, and the server refuses them while off. Enabling Notifications sends you to Android's *Notification access*; Messages asks for SMS and contacts permission.
-- **Files and clipboard.** Drag files to the Files tab to put them on the phone (`Download/R3U Gallery`). To go the other way, share a file or text from any app to **R3U Gallery**; it appears in the Files tab.
+- **Files and clipboard.** Drag files to the Files tab to put them on the phone (`Download/R3U Phone Link`). To go the other way, share a file or text from any app to **R3U | Phone Link**; it appears in the Files tab.
 - **Known limits.** Android records sent texts only for the default SMS app, so replies you send from the browser appear in the open conversation but may not be in the history later. The passcode and content travel over plain HTTP on your Wi-Fi.
 - **Emulator tests.** `emulator.yml` boots Android 11, 13 and 14 emulators in CI and exercises the real server end to end (`tools/e2e/smoke.sh`).
 

@@ -6,16 +6,16 @@
   <meta name="color-scheme" content="light dark">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; form-action 'none'; base-uri 'none'">
-  <title>R3U Gallery</title>
-  <meta name="description" content="Browse your Android phone's photos from your computer over Wi-Fi. No cable, no cloud.">
+  <title>R3U | Phone Link</title>
+  <meta name="description" content="Use your Android phone from your computer over Wi-Fi: photos, notifications, messages and files. No cable, no cloud.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="page">
     <header class="hero">
-      <h1>R3U <span class="grad">Gallery</span></h1>
-      <p class="lead">Browse your phone’s photos from your computer, over your own Wi-Fi. No cable, no cloud, no account.</p>
+      <h1>R3U<span class="sep">|</span><span class="grad">Phone Link</span></h1>
+      <p class="lead">Use your Android phone from your computer: photos, notifications, messages, files. Over your own Wi-Fi. No cable, no cloud, no account.</p>
     </header>
 
     <ol class="steps">
@@ -31,19 +31,19 @@
       <li class="card">
         <span class="num" aria-hidden="true">2</span>
         <h2>Start the app</h2>
-        <p>Open R3U Gallery on your phone, allow access to all photos, then confirm with your fingerprint, face, or passcode. The server starts by itself.</p>
+        <p>Open R3U | Phone Link on your phone, allow access to all photos, then confirm with your fingerprint, face, or passcode. The server starts by itself.</p>
         <p class="note">Your phone and computer must be on the <strong>same Wi-Fi</strong>.</p>
       </li>
 
       <li class="card">
         <span class="num" aria-hidden="true">3</span>
-        <h2>Open your gallery</h2>
+        <h2>Open Phone Link</h2>
         <p>Paste the link shown in the app (or scan its QR code with your computer’s camera app).</p>
         <form id="openForm" novalidate>
-          <label class="sr" for="link">Gallery link from the app</label>
+          <label class="sr" for="link">Link from the app</label>
           <input id="link" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="http://192.168.1.23:8080/?t=…" aria-describedby="linkError">
           <p class="error" id="linkError" role="alert" hidden>Paste the link shown in the app</p>
-          <button class="btn" type="submit">Open gallery</button>
+          <button class="btn" type="submit">Open Phone Link</button>
         </form>
       </li>
     </ol>

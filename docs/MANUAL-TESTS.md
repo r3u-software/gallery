@@ -60,9 +60,9 @@ Desktop: any current Chrome / Edge / Firefox / Safari on the same Wi-Fi.
 | **Feature switches** | App: Features and passcode; switch Messages off | Browser Messages tab is disabled; API answers 403 |
 | **Notifications** | Switch on, grant Notification access, receive a message | It appears in the Notifications tab within ~4 s; Dismiss clears it on the phone; Reply works for chat apps |
 | **Messages** | Switch on, allow SMS and contacts | Threads with contact names; send a text; the recipient receives it |
-| **Files in** | Drag a file onto the Files tab | Toast; file appears in `Download/R3U Gallery` on the phone |
-| **Files out** | Share a file to R3U Gallery from another app | Appears in the Files tab; Download works |
-| **Clipboard** | Share text to R3U Gallery; type text in the browser and send | Text appears in the browser; browser text pastes on the phone |
+| **Files in** | Drag a file onto the Files tab | Toast; file appears in `Download/R3U Phone Link` on the phone |
+| **Files out** | Share a file to R3U \| Phone Link from another app | Appears in the Files tab; Download works |
+| **Clipboard** | Share text to R3U \| Phone Link; type text in the browser and send | Text appears in the browser; browser text pastes on the phone |
 | **Find my phone** | Press Ring phone (Files off is fine) | Phone rings at full volume; Stop ringing works; stops after 60 s |
 | **Phone status** | Open the Phone tab | Battery, charging state, storage match the phone |
 | **Change passcode** | App: Change web passcode | Old passcode no longer works after the server restarts a session |
