@@ -10,12 +10,16 @@ mkdir -p "$OUT"
 shot() { sleep 2; adb exec-out screencap -p > "$OUT/$1.png"; echo "shot $1"; }
 
 tap_text() {
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
-  adb pull /sdcard/ui.xml "$OUT/ui.xml" >/dev/null 2>&1 || true
-  local xy
-  xy=$(python3 - "$OUT/ui.xml" "$1" <<'PY'
+  local xy=""
+  for attempt in 1 2 3 4 5 6; do
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+    adb pull /sdcard/ui.xml "$OUT/ui.xml" >/dev/null 2>&1 || true
+    xy=$(python3 - "$OUT/ui.xml" "$1" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
-tree = ET.parse(sys.argv[1])
+try:
+    tree = ET.parse(sys.argv[1])
+except Exception:
+    sys.exit(0)
 want = sys.argv[2]
 for n in tree.iter('node'):
     if (n.get('text') or '') == want or (n.get('content-desc') or '') == want:
@@ -24,6 +28,9 @@ for n in tree.iter('node'):
         break
 PY
 )
+    [ -n "$xy" ] && break
+    sleep 2
+  done
   [ -n "$xy" ] || { echo "text not found: $1"; return 1; }
   adb shell input tap $xy
   sleep 1

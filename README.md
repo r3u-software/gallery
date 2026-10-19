@@ -117,6 +117,12 @@ Beyond photos, the web page now has tabs for **Notifications, Messages, Files an
 - **Known limits.** Android records sent texts only for the default SMS app, so replies you send from the browser appear in the open conversation but may not be in the history later. The passcode and content travel over plain HTTP on your Wi-Fi.
 - **Emulator tests.** `emulator.yml` boots Android 11, 13 and 14 emulators in CI and exercises the real server end to end (`tools/e2e/smoke.sh`).
 
+## The new layout (in the repository, not yet released)
+
+The web app now follows an app-bar layout: a **ribbon** (Home, View, Tools) on top, an **app bar** on the left (Photos, Alerts, Messages, Contacts, Files, Phone), a **list pane** (albums, conversations, contacts, folders), the **content**, and a **status bar**. On narrow screens the app bar moves to the bottom and the list slides over the content.
+
+New with it: **albums** (the phone's photo folders), a **Contacts** app (its own switch in the phone app), **search** in every app, and **Open on the phone** (a link, the dialer or a map, from the Phone app or a contact). Presentation with screenshots: https://r3u-software.github.io/r3u-gallery-roadmap/deck/
+
 ## How it behaves
 
 - **Start flow:** photo permission ("Allow all") → biometric / device-credential prompt → server starts. The prompt appears on every fresh app launch. No screen lock set → the server never starts and the app asks you to set one. Partial photo access ("Select photos") → a screen explains full access is needed.
