@@ -4,7 +4,7 @@
 
 const UNLOCK = 'gallery_unlock';
 const PASSCODE = process.env.PASSCODE || '';
-const FEATURES = { photos: true, notifications: true, messages: true, contacts: true, files: true, status: true, find: true };
+const FEATURES = { photos: true, notifications: true, messages: true, contacts: true, files: true, status: true, find: true, backup: true };
 for (const f of (process.env.OFF || '').split(',').filter(Boolean)) FEATURES[f] = false;
 const fails = { n: 0, until: 0 };
 
@@ -40,6 +40,9 @@ const contacts = [
   { id: 6, name: 'Tita Joy', numbers: ['+63 915 555 0133'], emails: [] },
 ];
 
+const backup = { url: '', secret: '', photos: true, videos: true, wifiOnly: true };
+const backupSettings = () => ({ configured: !!(backup.url && backup.secret), urlHint: backup.url ? '…' + backup.url.slice(-14) : '', photos: backup.photos, videos: backup.videos, wifiOnly: backup.wifiOnly });
+
 const readBody = (req) => new Promise((res) => { let b = ''; req.on('data', (d) => (b += d)); req.on('end', () => res(b)); });
 const field = (raw, k) => { try { return JSON.parse(raw)[k]; } catch { return undefined; } };
 
@@ -50,6 +53,7 @@ const featureOf = (p) =>
       : p.startsWith('/api/files') || p.startsWith('/api/clipboard') ? 'files'
         : p === '/api/status' ? 'status'
           : p.startsWith('/api/find') || p === '/api/open' ? 'find'
+            : p.startsWith('/api/backup') ? 'backup'
             : p.startsWith('/api/photos') || p === '/api/albums' || p === '/api/download' || p.startsWith('/api/trash') ? 'photos'
               : null;
 
@@ -131,6 +135,23 @@ export async function handlePhase1(req, url, send, json) {
     json(200, { ok: true });
     return true;
   }
+  if (p === '/api/backup' && req.method === 'GET') { json(200, backupSettings()); return true; }
+  if (p === '/api/backup' && req.method === 'POST') {
+    const raw = await readBody(req);
+    const url = String(field(raw, 'url') || '').trim();
+    const secret = String(field(raw, 'secret') || '');
+    if (url && !/^https:\/\/script\.google\.com\/[A-Za-z0-9_\-./]+\/exec$/.test(url)) { json(400, { error: 'Use the address that ends in /exec from script.google.com.' }); return true; }
+    if (secret && secret.length < 8) { json(400, { error: 'The secret must be at least 8 characters.' }); return true; }
+    const photos = field(raw, 'photos') !== false, videos = field(raw, 'videos') !== false;
+    if (!photos && !videos) { json(400, { error: 'Pick photos, videos or both.' }); return true; }
+    if (url) backup.url = url;
+    if (secret) backup.secret = secret;
+    Object.assign(backup, { photos, videos, wifiOnly: field(raw, 'wifiOnly') !== false });
+    if (!backup.url || !backup.secret) { json(400, { error: 'Enter the script address and the secret.' }); return true; }
+    json(200, { ok: true, reachable: !process.env.BACKUP_UNREACHABLE });
+    return true;
+  }
+  if (p === '/api/backup/clear' && req.method === 'POST') { await readBody(req); Object.assign(backup, { url: '', secret: '' }); json(200, { ok: true }); return true; }
   if (p === '/api/find' && req.method === 'GET') { json(200, { ringing }); return true; }
   if (p === '/api/find/ring') { await readBody(req); ringing = true; json(200, { ringing }); return true; }
   if (p === '/api/find/stop') { await readBody(req); ringing = false; json(200, { ringing }); return true; }

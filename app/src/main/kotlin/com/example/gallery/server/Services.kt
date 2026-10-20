@@ -11,6 +11,7 @@ enum class Feature(val key: String) {
     FILES("files"),
     STATUS("status"),
     FIND("find"),
+    BACKUP("backup"),
 }
 
 fun interface FeatureFlags {
@@ -99,6 +100,7 @@ class Services(
     val find: FindProvider? = null,
     val contacts: ContactsProvider? = null,
     val open: OpenProvider? = null,
+    val backup: BackupProvider? = null,
     val passcode: PasscodeVerifier? = null,
     val features: FeatureFlags = FeatureFlags { true },
     val deviceName: () -> String = { "Phone" },

@@ -26,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
+import com.example.gallery.android.BackupPrefs
+import com.example.gallery.android.BackupScheduler
 import com.example.gallery.android.FeaturePrefs
 import com.example.gallery.android.GalleryService
 import com.example.gallery.android.NotificationHub
@@ -96,6 +98,7 @@ class MainActivity : FragmentActivity() {
         super.onResume()
         refreshTick++
         refresh()
+        BackupScheduler.sync(this) // picks up a permission or switch change made in Android settings
         // A trash request is waiting for the user's answer (e.g. the heads-up notification was missed or
         // notifications are off): surface the system dialog now that the app is in front.
         if (TrashCoordinator.pending != null) {
@@ -185,6 +188,15 @@ class MainActivity : FragmentActivity() {
             ),
             row(Feature.FILES, "Files and clipboard", "Send files and text between phone and computer", null, null),
             row(Feature.FIND, "Find my phone and open on phone", "Ring this phone, or open a link, number or map on it", null, null),
+            row(
+                Feature.BACKUP, "Backup to Google Drive", "Quietly copy photos and videos to your own Drive folder",
+                when {
+                    !Permissions.videoAccess(this) -> "Needs permission to read videos"
+                    !BackupPrefs(this).configured() -> "Finish setup on the web dashboard (Phone)"
+                    else -> null
+                },
+                if (Permissions.videoAccess(this)) null else "Grant permission",
+            ),
         )
         SettingsScreen(
             rows = rows,
@@ -192,6 +204,7 @@ class MainActivity : FragmentActivity() {
             onToggle = { r, on ->
                 features.set(r.feature, on)
                 if (on) onFeatureEnabled(r.feature)
+                if (r.feature == Feature.BACKUP) BackupScheduler.sync(this)
                 refreshTick++
             },
             onFix = { r -> onFeatureEnabled(r.feature, force = true) },
@@ -225,6 +238,10 @@ class MainActivity : FragmentActivity() {
                 }
             Feature.CONTACTS ->
                 if (!contactsGranted()) smsPermissions.launch(arrayOf(Manifest.permission.READ_CONTACTS))
+            Feature.BACKUP -> {
+                val missing = Permissions.backupToRequest(this)
+                if (missing.isNotEmpty()) smsPermissions.launch(missing)
+            }
             else -> Unit
         }
     }

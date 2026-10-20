@@ -34,6 +34,11 @@ jobs:
         with:
           gradle-version: "8.11.1"
 
+      - name: Landing page and Apps Script tests
+        run: |
+          node landing/validate.test.mjs
+          node landing/backup.test.mjs
+
       - name: Unit tests
         run: gradle --no-daemon testDebugUnitTest
 

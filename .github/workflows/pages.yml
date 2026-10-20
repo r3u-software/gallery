@@ -27,7 +27,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate link checker
-        run: node landing/validate.test.mjs
+        run: |
+          node landing/validate.test.mjs
+          node landing/backup.test.mjs
 
       # Point the Download button at this repo's latest release asset and show its version/size.
       - name: Generate landing/config.js

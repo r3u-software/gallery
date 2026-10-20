@@ -25,6 +25,7 @@ adb shell wm dismiss-keyguard || true
 
 if [ "$API" -ge 33 ]; then
   adb shell pm grant $PKG android.permission.READ_MEDIA_IMAGES
+  adb shell pm grant $PKG android.permission.READ_MEDIA_VIDEO
   [ "$API" -ge 34 ] && adb shell pm grant $PKG android.permission.READ_MEDIA_VISUAL_USER_SELECTED || true
   adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS
 else
@@ -33,11 +34,15 @@ fi
 adb shell pm grant $PKG android.permission.READ_SMS
 adb shell pm grant $PKG android.permission.SEND_SMS
 adb shell pm grant $PKG android.permission.READ_CONTACTS
+adb shell pm grant $PKG android.permission.ACCESS_MEDIA_LOCATION || true
 
-# A real photo for MediaStore (1x1 PNG).
+# A real photo for MediaStore (1x1 PNG), and a 2.5 MB "video" to back up.
 echo 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' | base64 -d > "$OUT/test.png"
 adb push "$OUT/test.png" /sdcard/Pictures/r3u-e2e.png >/dev/null
 adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/r3u-e2e.png >/dev/null
+head -c 2621440 /dev/urandom > "$OUT/clip.mp4"
+adb push "$OUT/clip.mp4" /sdcard/Movies/r3u-e2e-clip.mp4 >/dev/null
+adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Movies/r3u-e2e-clip.mp4 >/dev/null
 
 # Let the notification listener in, so the notifications API has something to read.
 adb shell cmd notification allow_listener "$PKG/$PKG.android.GalleryNotificationListener" || true
@@ -154,6 +159,41 @@ sleep 2
 T=$(curl -s -b "$JAR" "$BASE/api/sms/threads")
 grep -q '"permission":true' <<<"$T" || fail "sms permission not granted: $T"
 if grep -q "hello from e2e" <<<"$T"; then ok "sms received"; else echo "WARN sms not delivered by emulator console: $T"; fi
+
+# --- backup to Drive: a fake Apps Script on this machine; the emulator reaches it at 10.0.2.2 ---
+GAS_PORT=9099
+python3 "$(dirname "$0")/fake_gas.py" "$GAS_PORT" >"$OUT/fake_gas.log" 2>&1 &
+GAS_PID=$!
+trap 'kill $GAS_PID 2>/dev/null || true' EXIT
+for i in $(seq 1 20); do curl -s "http://127.0.0.1:$GAS_PORT/report" >/dev/null 2>&1 && break; sleep 0.5; done
+
+BK_BODY='{"url":"http://10.0.2.2:'"$GAS_PORT"'/exec","secret":"e2e-backup-secret","photos":true,"videos":true,"wifiOnly":false}'
+BK=$(curl -s -b "$JAR" -X POST -H 'Content-Type: application/json' -d "$BK_BODY" "$BASE/api/backup" || true)
+grep -q '"reachable":true' <<<"$BK" || fail "backup save should reach the fake script: $BK"
+BKG=$(curl -s -b "$JAR" "$BASE/api/backup")
+grep -q '"configured":true' <<<"$BKG" || fail "backup should be configured: $BKG"
+grep -q "e2e-backup-secret" <<<"$BKG" && fail "the secret must never be returned: $BKG"
+[ "$(code -b "$JAR" -X POST -H 'Content-Type: application/json' -d '{"url":"http://evil.example/exec","secret":"e2e-backup-secret"}' "$BASE/api/backup")" = "400" ] || fail "a non-Google address must be refused"
+ok "backup settings saved, secret hidden, bad address refused"
+
+WANT_PNG=$(sha256sum "$OUT/test.png" | cut -d' ' -f1)
+WANT_MP4=$(sha256sum "$OUT/clip.mp4" | cut -d' ' -f1)
+REPORT=""
+for i in $(seq 1 90); do
+  REPORT=$(curl -s "http://127.0.0.1:$GAS_PORT/report" || true)
+  grep -q "$WANT_PNG" <<<"$REPORT" && break
+  sleep 3
+done
+echo "fake drive report: $REPORT"
+grep -q "$WANT_PNG" <<<"$REPORT" || { adb logcat -d -s R3U_BACKUP | tail -20 || true; fail "the photo never reached the fake Drive"; }
+ok "photo backed up to the fake Drive, byte for byte"
+for i in $(seq 1 20); do
+  REPORT=$(curl -s "http://127.0.0.1:$GAS_PORT/report" || true)
+  grep -q "$WANT_MP4" <<<"$REPORT" && break
+  sleep 3
+done
+if grep -q "$WANT_MP4" <<<"$REPORT"; then ok "video backed up to the fake Drive, byte for byte"; else echo "WARN the emulator's media scanner did not index the test video: $REPORT"; fi
+adb logcat -d -s R3U_BACKUP | tail -5 || true
 
 # --- feature switch is enforced server-side ---
 adb shell am force-stop $PKG >/dev/null || true

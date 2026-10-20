@@ -123,6 +123,23 @@ The web app now follows an app-bar layout: a **ribbon** (Home, View, Tools) on t
 
 New with it: **albums** (the phone's photo folders), a **Contacts** app (its own switch in the phone app), **search** in every app, and **Open on the phone** (a link, the dialer or a map, from the Phone app or a contact). Presentation with screenshots: https://r3u-software.github.io/r3u-gallery-roadmap/deck/
 
+## Drive backup (silent)
+
+The phone can quietly copy its photos and videos into a Google Drive folder you choose. It uses a small Google Apps Script that lives in **your own** Google account, so there is no Google Cloud project, no OAuth client and nothing of ours in between.
+
+```
+phone --(asks for an upload slot)--> your Apps Script --(creates it in Drive)--> your folder
+phone --(sends the file itself, in chunks, resumable)----------------------------> Google Drive
+```
+
+- **Setup** (once, about five minutes): follow https://r3u-software.github.io/gallery/backup.html. It builds the script with your folder and a random secret already filled in. Then, on the computer, paste the web app address and the secret into **Phone → Backup to Google Drive**, and on the phone switch on **Features and passcode → Backup to Google Drive**.
+- **Silent by design.** No notification of its own, no progress, no error messages. The dashboard only holds the settings. The Drive folder is the status.
+- **How it runs.** Ordinary background work (WorkManager), about every 15 minutes while the phone has a suitable connection (Wi-Fi by default), and again soon after a new photo or video appears. It works newest first, one file at a time, and an interrupted file resumes where it stopped. Android may run it late when the phone is idle and unplugged; overnight on the charger is the reliable time.
+- **Never deletes.** Trashing a photo on the phone or in the dashboard leaves the Drive copy alone. A file already in the folder (same name and size) is not uploaded twice.
+- **Security.** The script only answers requests carrying your secret. The phone only ever contacts `script.google.com` and `*.googleapis.com` over https, and the secret never goes back to the browser. Keep the Drive folder's sharing on **Restricted**.
+- **Limits.** Drive's free 15 GB is shared with Gmail and Photos. Google caps Apps Script at about 20,000 Drive calls a day (about 10,000 files). Photo GPS data is kept when the *photo location* permission is granted.
+- **Tests.** `node landing/backup.test.mjs` runs the real script against a fake Google; the Kotlin tests cover the uploader, resume and the API; the emulator job (`tools/e2e/fake_gas.py`) backs a photo up end to end.
+
 ## How it behaves
 
 - **Start flow:** photo permission ("Allow all") → biometric / device-credential prompt → server starts. The prompt appears on every fresh app launch. No screen lock set → the server never starts and the app asks you to set one. Partial photo access ("Select photos") → a screen explains full access is needed.

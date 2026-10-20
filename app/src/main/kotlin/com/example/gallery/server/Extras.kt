@@ -15,6 +15,24 @@ interface OpenProvider {
     fun open(kind: String, value: String): Boolean
 }
 
+/** What the dashboard may know about the Drive backup. The secret never leaves the phone, and progress is never reported. */
+data class BackupSettings(val configured: Boolean, val urlHint: String, val photos: Boolean, val videos: Boolean, val wifiOnly: Boolean)
+
+interface BackupProvider {
+    fun settings(): BackupSettings
+
+    /** Returns an error message for an address the phone must never contact, otherwise null. */
+    fun validateUrl(url: String): String?
+
+    /** Stores the options; a null [url] or [secret] keeps the saved one. False when it would still be incomplete. */
+    fun save(url: String?, secret: String?, photos: Boolean, videos: Boolean, wifiOnly: Boolean): Boolean
+
+    /** Asks the script whether it answers and accepts the secret. Called once, when settings are saved. */
+    fun test(): Boolean
+
+    fun clear()
+}
+
 object OpenRequests {
     private val NUMBER = Regex("^[+0-9 ()\\-]{3,24}$")
 
@@ -43,6 +61,10 @@ object JsonExtras {
         "{\"total\":$total,\"items\":[" + items.joinToString(",") {
             "{\"name\":${Json.str(it.name)},\"count\":${it.count}}"
         } + "]}"
+
+    fun backup(s: BackupSettings): String =
+        "{\"configured\":${s.configured},\"urlHint\":${Json.str(s.urlHint)},\"photos\":${s.photos}," +
+            "\"videos\":${s.videos},\"wifiOnly\":${s.wifiOnly}}"
 
     fun contacts(permission: Boolean, items: List<Contact>): String =
         "{\"permission\":$permission,\"items\":[" + items.joinToString(",") { c ->

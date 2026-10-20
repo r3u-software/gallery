@@ -1,5 +1,6 @@
 package com.example.gallery.server
 
+import com.example.gallery.backup.BackupRules
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Method
@@ -275,6 +276,7 @@ class GalleryServer(
         uri.startsWith("/api/files") || uri.startsWith("/api/clipboard") -> Feature.FILES
         uri == "/api/status" -> Feature.STATUS
         uri.startsWith("/api/find") || uri == "/api/open" -> Feature.FIND
+        uri.startsWith("/api/backup") -> Feature.BACKUP
         else -> null
     }
 
@@ -386,6 +388,34 @@ class GalleryServer(
             val problem = OpenRequests.validate(kind, value)
             if (problem != null) return json(Status.BAD_REQUEST, JsonExtras.error(problem))
             return if (p.open(kind!!, value!!)) json(Status.OK, "{\"ok\":true}") else json(Status.INTERNAL_ERROR, JsonExtras.error("Could not open it on the phone."))
+        }
+
+        // backup to Google Drive: settings only. Progress and errors are deliberately never exposed.
+        if (uri == "/api/backup" && method == Method.GET) {
+            val p = services.backup ?: return unavailable()
+            return json(Status.OK, JsonExtras.backup(p.settings()))
+        }
+        if (uri == "/api/backup" && method == Method.POST) {
+            val p = services.backup ?: return unavailable()
+            val raw = readRaw(session)
+            val url = JsonFields.string(raw, "url")?.trim()?.takeIf { it.isNotEmpty() }
+            val secret = JsonFields.string(raw, "secret")?.takeIf { it.isNotEmpty() }
+            val photos = JsonFields.bool(raw, "photos") ?: true
+            val videos = JsonFields.bool(raw, "videos") ?: true
+            val wifiOnly = JsonFields.bool(raw, "wifiOnly") ?: true
+            val problem = url?.let { p.validateUrl(it) } ?: secret?.let { BackupRules.validateSecret(it) }
+            if (problem != null) return json(Status.BAD_REQUEST, JsonExtras.error(problem))
+            if (!photos && !videos) return json(Status.BAD_REQUEST, JsonExtras.error("Pick photos, videos or both."))
+            if (!p.save(url, secret, photos, videos, wifiOnly)) {
+                return json(Status.BAD_REQUEST, JsonExtras.error("Enter the script address and the secret."))
+            }
+            return json(Status.OK, "{\"ok\":true,\"reachable\":${p.test()}}")
+        }
+        if (uri == "/api/backup/clear" && method == Method.POST) {
+            val p = services.backup ?: return unavailable()
+            drainBody(session)
+            p.clear()
+            return json(Status.OK, "{\"ok\":true}")
         }
 
         // find my phone

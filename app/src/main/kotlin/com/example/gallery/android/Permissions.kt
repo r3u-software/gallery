@@ -31,6 +31,20 @@ object Permissions {
         else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
+    /** Videos can be read (backup). Android 13+ asks for them separately; 11-12 share the storage permission. */
+    fun videoAccess(ctx: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= 33) granted(ctx, Manifest.permission.READ_MEDIA_VIDEO)
+        else granted(ctx, Manifest.permission.READ_EXTERNAL_STORAGE)
+
+    /** True when original GPS data in photos is readable, so backed-up photos keep their location. */
+    fun mediaLocation(ctx: Context): Boolean = granted(ctx, Manifest.permission.ACCESS_MEDIA_LOCATION)
+
+    /** What switching on Backup asks for beyond photo access: videos, and photo locations. */
+    fun backupToRequest(ctx: Context): Array<String> = buildList {
+        if (!videoAccess(ctx)) add(Manifest.permission.READ_MEDIA_VIDEO)
+        if (!mediaLocation(ctx)) add(Manifest.permission.ACCESS_MEDIA_LOCATION)
+    }.toTypedArray()
+
     fun needsNotificationPermission(ctx: Context): Boolean =
         Build.VERSION.SDK_INT >= 33 && !granted(ctx, Manifest.permission.POST_NOTIFICATIONS)
 

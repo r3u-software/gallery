@@ -1,7 +1,7 @@
 // Phone: battery, storage, device info, Find my phone, and "Open on the phone".
 
 import { getJSON, sendJSON, ApiError } from '../api.js';
-import { toast, el, svgIcon, formatBytes } from '../ui.js';
+import { toast, el, svgIcon, formatBytes, confirmDialog } from '../ui.js';
 import { shell } from '../shell.js';
 import { askOpen } from '../openphone.js';
 
@@ -66,6 +66,80 @@ async function toggleRing() {
   }
 }
 
+// ---- Backup to Google Drive: settings only. The phone never reports progress or errors.
+
+const URL_PLACEHOLDER = 'https://script.google.com/macros/s/…/exec';
+const SECRET_PLACEHOLDER = 'The secret from the setup page';
+
+function backupMessage(text, bad = false) {
+  const m = $('backupMsg');
+  m.textContent = text;
+  m.classList.toggle('bad', bad);
+}
+
+function backupOff(off) {
+  $('backupOff').hidden = !off;
+  $('backupForm').hidden = off;
+}
+
+async function loadBackup() {
+  try {
+    const s = await getJSON('/api/backup');
+    backupOff(false);
+    $('backupUrl').placeholder = s.configured ? `Saved (${s.urlHint}). Type to replace it.` : URL_PLACEHOLDER;
+    $('backupSecret').placeholder = s.configured ? 'Saved. Type to replace it.' : SECRET_PLACEHOLDER;
+    $('backupPhotos').checked = s.photos;
+    $('backupVideos').checked = s.videos;
+    $('backupWifi').checked = s.wifiOnly;
+    $('backupClear').hidden = !s.configured;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) backupOff(true);
+    else if (!(err instanceof ApiError)) throw err;
+  }
+}
+
+async function saveBackup(event) {
+  event.preventDefault();
+  backupMessage('Saving…');
+  try {
+    const r = await sendJSON('/api/backup', {
+      url: $('backupUrl').value.trim(),
+      secret: $('backupSecret').value,
+      photos: $('backupPhotos').checked,
+      videos: $('backupVideos').checked,
+      wifiOnly: $('backupWifi').checked,
+    });
+    $('backupUrl').value = '';
+    $('backupSecret').value = '';
+    backupMessage(
+      r.reachable ? 'Saved. The script answered, so backup starts by itself.' : 'Saved, but the script did not answer. Check the address and the secret.',
+      !r.reachable,
+    );
+    await loadBackup();
+  } catch (err) {
+    if (!(err instanceof ApiError)) throw err;
+    if (err.status === 403) backupOff(true);
+    else backupMessage(err.status === 400 && err.body?.error ? err.body.error : "Couldn't save the backup settings", true);
+  }
+}
+
+async function clearBackup() {
+  const ok = await confirmDialog({
+    title: 'Stop backing up?',
+    text: 'The phone forgets the script address and the secret. Files already in Drive stay there.',
+    okLabel: 'Stop backup',
+  });
+  if (!ok) return;
+  try {
+    await sendJSON('/api/backup/clear', {});
+    backupMessage('Backup removed.');
+    await loadBackup();
+  } catch (err) {
+    if (!(err instanceof ApiError)) throw err;
+    backupMessage("Couldn't remove it", true);
+  }
+}
+
 const jump = (id) => { $(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); shell.togglePane(false); };
 
 export const app = {
@@ -80,9 +154,12 @@ export const app = {
   mount() {
     $('findBtn').addEventListener('click', toggleRing);
     for (const b of document.querySelectorAll('[data-open]')) b.addEventListener('click', () => askOpen(b.dataset.open));
+    $('backupForm').addEventListener('submit', saveBackup);
+    $('backupClear').addEventListener('click', clearBackup);
   },
 
   async show() {
+    loadBackup();
     await load();
     S.timer = setInterval(load, 10000);
   },
@@ -101,7 +178,7 @@ export const app = {
       b.addEventListener('click', () => jump(target));
       return b;
     };
-    c.append(item('Summary', 'phone', 'view-phone'), item('Battery', 'refresh', 'card-battery'), item('Storage', 'folder', 'card-storage'), item('Find my phone', 'volume', 'findCard'), item('Open on phone', 'link', 'openCard'));
+    c.append(item('Summary', 'phone', 'view-phone'), item('Battery', 'refresh', 'card-battery'), item('Storage', 'folder', 'card-storage'), item('Find my phone', 'volume', 'findCard'), item('Open on phone', 'link', 'openCard'), item('Backup to Drive', 'folder', 'backupCard'));
     c.append(el('div', 'psec', 'Connection'));
     c.append(el('div', 'pane-note', 'Connected over your Wi-Fi. This page talks directly to the phone.'));
   },

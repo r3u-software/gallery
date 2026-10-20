@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.MediaStore
 import android.util.Base64
 import com.example.gallery.server.AssetProvider
 import com.example.gallery.server.GalleryServer
@@ -36,6 +37,7 @@ class GalleryService : Service() {
 
     private var tracker: NetworkTracker? = null
     private var observer: ContentObserver? = null
+    private var videoObserver: ContentObserver? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private var catalog: PhotoCatalog? = null
     private var lastText = "Starting…"
@@ -86,6 +88,7 @@ class GalleryService : Service() {
             find = ring,
             contacts = ContactsProviderImpl(this),
             open = OpenOnPhone(this),
+            backup = BackupSettingsProvider(this),
             passcode = PasscodeStore(this),
             features = FeaturePrefs(this),
             deviceName = { deviceName(this) },
@@ -96,8 +99,17 @@ class GalleryService : Service() {
         TrashCoordinator.init(applicationContext) { cat.invalidate() }
 
         observer = object : ContentObserver(main) {
-            override fun onChange(selfChange: Boolean) = cat.invalidate()
+            override fun onChange(selfChange: Boolean) {
+                cat.invalidate()
+                BackupScheduler.kick(this@GalleryService) // a new photo: back it up soon (does nothing unless Backup is on)
+            }
         }.also { contentResolver.registerContentObserver(store.collection, true, it) }
+        videoObserver = object : ContentObserver(main) {
+            override fun onChange(selfChange: Boolean) = BackupScheduler.kick(this@GalleryService)
+        }.also {
+            contentResolver.registerContentObserver(MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL), true, it)
+        }
+        BackupScheduler.sync(this)
 
         acquireWifiLock()
         tracker = NetworkTracker(this) { newIp -> main.post { onNetwork(newIp) } }.also { it.start() }
@@ -210,6 +222,8 @@ class GalleryService : Service() {
         tracker = null
         observer?.let { contentResolver.unregisterContentObserver(it) }
         observer = null
+        videoObserver?.let { contentResolver.unregisterContentObserver(it) }
+        videoObserver = null
         stopServer()
         findProvider?.stop()
         findProvider = null

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src data:; form-action 'none'; base-uri 'none'">
+  <title>R3U | Phone Link: Drive backup</title>
+  <meta name="description" content="Set up silent backup of your phone's photos and videos to your own Google Drive folder, using your own Apps Script.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233d5afe'/%3E%3Cpath d='M7 22l6-7 4 5 3-3 5 5z' fill='%23fff'/%3E%3Ccircle cx='12' cy='11' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>Drive <span class="grad">backup</span></h1>
+      <p class="lead">Your phone copies its photos and videos into a Drive folder you choose, quietly in the background. It uses a small script that lives in your own Google account. About five minutes, once.</p>
+    </header>
+
+    <ol class="steps wide">
+      <li class="card">
+        <span class="num" aria-hidden="true">1</span>
+        <h2>Choose the Drive folder</h2>
+        <p>Open the folder in Google Drive, copy its address from the browser, and paste it here.</p>
+        <label class="sr" for="folder">Drive folder address</label>
+        <input id="folder" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://drive.google.com/drive/folders/…">
+        <p class="error" id="folderError" role="alert" hidden>That doesn’t look like a Drive folder address.</p>
+        <label class="check"><input id="albums" type="checkbox"> Keep a sub-folder for each phone album (Camera, WhatsApp, …)</label>
+        <p class="note">Set the folder’s sharing to <strong>Restricted</strong> (only you). If anyone with the link can open it, anyone with the link can see your photos.</p>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">2</span>
+        <h2>Make the script</h2>
+        <p>Go to <a href="https://script.google.com/home/start" target="_blank" rel="noopener noreferrer">script.google.com</a>, choose <strong>New project</strong>, delete the sample code, and paste this in.</p>
+        <button class="btn" id="copyScript" type="button" disabled>Copy the script</button>
+        <p class="meta" id="scriptHint">Paste the folder address in step 1 first.</p>
+        <details class="src">
+          <summary>View the script</summary>
+          <pre id="source"></pre>
+        </details>
+        <p>Your secret word (already inside the copied script). You will type it into the dashboard later.</p>
+        <code class="secret" id="secret"></code>
+        <div class="btn-row">
+          <button class="btn ghost" id="copySecret" type="button">Copy the secret</button>
+          <button class="btn ghost" id="newSecret" type="button">Make another</button>
+        </div>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">3</span>
+        <h2>Allow Drive access</h2>
+        <p>In the script editor open <strong>Project settings</strong> (the gear), tick <strong>Show “appsscript.json” manifest file in editor</strong>, go back to the editor, open <code>appsscript.json</code>, and replace everything in it with this.</p>
+        <button class="btn" id="copyManifest" type="button">Copy appsscript.json</button>
+        <p class="note">This lets <em>your own script</em> write into your folder. It is not shared with anyone else.</p>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">4</span>
+        <h2>Publish it</h2>
+        <p>Click <strong>Deploy</strong>, <strong>New deployment</strong>, the gear, <strong>Web app</strong>. Run as <strong>Me</strong>, access <strong>Anyone</strong>, then <strong>Deploy</strong>. Google asks you to allow access. It warns that the app isn’t verified, because you wrote it: choose <strong>Advanced</strong>, then <strong>Go to … (unsafe)</strong>, then <strong>Allow</strong>. Copy the <strong>Web app</strong> address that ends in <code>/exec</code>.</p>
+      </li>
+
+      <li class="card">
+        <span class="num" aria-hidden="true">5</span>
+        <h2>Tell the app</h2>
+        <p>On the phone: <strong>Features and passcode</strong>, switch on <strong>Backup to Google Drive</strong> and allow the permissions it asks for. On the computer: open Phone Link, go to <strong>Phone</strong>, find <strong>Backup to Google Drive</strong>, paste the web app address and the secret, and press <strong>Save</strong>.</p>
+        <p class="note">That’s all. From then on the phone copies new photos and videos by itself, newest first, whenever it is on Wi-Fi. It shows nothing and never deletes anything from Drive. To check on it, look in the Drive folder.</p>
+      </li>
+    </ol>
+
+    <footer>
+      <p>Photos go from your phone straight to your own Drive. This page and its script never see them. <a href="index.html">Back to the start</a>.</p>
+    </footer>
+  </main>
+  <script type="module" src="backup.js"></script>
+</body>
+</html>

@@ -15,6 +15,13 @@ object JsonFields {
         return unescape(m.groupValues[1])
     }
 
+    /** A top-level `true`/`false` field, or null when it is missing. */
+    fun bool(raw: String?, name: String): Boolean? {
+        if (raw.isNullOrBlank()) return null
+        val m = Regex("\"" + Regex.escape(name) + "\"\\s*:\\s*(true|false)").find(raw) ?: return null
+        return m.groupValues[1] == "true"
+    }
+
     private fun unescape(s: String): String {
         if (!s.contains('\\')) return s
         val sb = StringBuilder(s.length)
