@@ -4,11 +4,15 @@ import android.Manifest
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.BatteryManager
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Log
@@ -31,11 +35,13 @@ import com.example.gallery.backup.BackupRules
 import com.example.gallery.backup.BackupSource
 import com.example.gallery.backup.HttpDriveTransport
 import com.example.gallery.backup.MediaKind
+import com.example.gallery.backup.RunResult
 import com.example.gallery.server.BackupProvider
 import com.example.gallery.server.BackupSettings
 import java.io.FileInputStream
 import java.io.InputStream
 import java.net.URL
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -245,15 +251,134 @@ class BackupSettingsProvider(context: Context) : BackupProvider {
 
     override fun test(): Boolean = prefs.config()?.let { BackupAndroid.transport().ping(it) } ?: false
 
+    override fun lastNote(): String = BackupRunner.lastNote(app)
+
     override fun clear() {
         prefs.clear()
         BackupScheduler.sync(app)
     }
 }
 
+/** What the last run did, kept privately on the phone for troubleshooting. It is never shown in the app. */
+private class BackupDiag(context: Context) {
+    private val prefs = context.applicationContext.getSharedPreferences("backup_diag", Context.MODE_PRIVATE)
+    fun record(text: String) {
+        prefs.edit().putString("note", "${System.currentTimeMillis()} $text").apply()
+        if (BuildConfig.DEBUG) Log.i("R3U_BACKUP", text)
+    }
+    fun last(): String = prefs.getString("note", null) ?: "never ran"
+}
+
+/** The result of one try, and whether it is worth trying again straight away. */
+class BackupRunNote(val again: Boolean, val text: String)
+
 /**
- * Backup runs as ordinary background work: no notification, nothing on screen. Android runs it about every
- * 15 minutes while the phone has a suitable connection, and again soon after new photos appear.
+ * One backup pass. Used by the loop that lives in the always-on service and by the background job that is the
+ * fallback when the service isn't running, so only one of them works at a time.
+ */
+object BackupRunner {
+    private val running = AtomicBoolean(false)
+
+    fun run(context: Context, budgetMs: Long, shouldStop: () -> Boolean): BackupRunNote {
+        val app = context.applicationContext
+        val diag = BackupDiag(app)
+        fun skip(why: String) = BackupRunNote(false, why).also { diag.record(why) }
+
+        val config = BackupPrefs(app).config() ?: return skip("waiting: no script address")
+        if (!running.compareAndSet(false, true)) return BackupRunNote(false, "another pass is running")
+        try {
+            if (config.wifiOnly && !onWifi(app)) return skip("waiting: not on Wi-Fi")
+            if (batteryLow(app)) return skip("waiting: battery low")
+            val photos = config.photos && Permissions.fullAccess(app)
+            val videos = config.videos && Permissions.videoAccess(app)
+            if (!photos && !videos) return skip("waiting: no permission to read media")
+            val report = BackupEngine(MediaBackupSource(app), SqliteBackupLedger(app), BackupAndroid.transport()).run(
+                config.copy(photos = photos, videos = videos),
+                deadlineMs = System.currentTimeMillis() + budgetMs,
+                shouldStop = shouldStop,
+            )
+            val text = "${report.result} uploaded=${report.uploaded} existed=${report.alreadyThere} skipped=${report.skipped}" +
+                (if (config.photos && !photos) " (photos not allowed)" else "") + (if (config.videos && !videos) " (videos not allowed)" else "")
+            diag.record(text)
+            return BackupRunNote(report.result == RunResult.TIME_UP, text)
+        } catch (e: Exception) {
+            return skip("error ${e.javaClass.simpleName}")
+        } finally {
+            running.set(false)
+        }
+    }
+
+    fun lastNote(context: Context): String = BackupDiag(context).last()
+
+    /** "Wi-Fi only" means Wi-Fi (or a cable), not "a network Android happens to call unmetered". */
+    private fun onWifi(context: Context): Boolean {
+        val cm = context.getSystemService(ConnectivityManager::class.java) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
+    }
+
+    private fun batteryLow(context: Context): Boolean {
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return false
+        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+        val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+        return !charging && level >= 0 && level * 100 / scale < 15
+    }
+}
+
+/**
+ * Backup mostly runs inside the always-on service that already serves the dashboard, so it starts as soon as the
+ * app is open and does not depend on Android's job scheduling. This is its loop; [nudge] wakes it early.
+ */
+object BackupLoop {
+    private val nudges = LinkedBlockingQueue<Unit>()
+    @Volatile private var thread: Thread? = null
+    @Volatile private var stopping = false
+
+    fun nudge() {
+        nudges.offer(Unit)
+    }
+
+    @Synchronized
+    fun start(context: Context) {
+        if (thread?.isAlive == true) return
+        stopping = false
+        val app = context.applicationContext
+        thread = Thread({
+            while (!stopping) {
+                val note = try {
+                    BackupRunner.run(app, LOOP_BUDGET_MS) { stopping }
+                } catch (_: Exception) {
+                    BackupRunNote(false, "error")
+                }
+                if (stopping) break
+                if (note.again) continue
+                try {
+                    nudges.poll(PAUSE_MS, TimeUnit.MILLISECONDS)
+                    nudges.clear()
+                } catch (_: InterruptedException) {
+                    break
+                }
+            }
+        }, "backup").apply { isDaemon = true; start() }
+    }
+
+    @Synchronized
+    fun stop() {
+        stopping = true
+        thread?.interrupt()
+        thread = null
+    }
+
+    private const val LOOP_BUDGET_MS = 30 * 60_000L
+    private const val PAUSE_MS = 5 * 60_000L
+}
+
+/**
+ * The fallback: ordinary background work that Android runs about every 15 minutes, for when the service isn't
+ * running. No notification, nothing on screen.
  */
 object BackupScheduler {
     private const val PERIODIC = "r3u-backup-periodic"
@@ -262,35 +387,31 @@ object BackupScheduler {
     /** Backup has no switch: it runs by itself as soon as the app has a script to talk to. */
     fun isActive(context: Context): Boolean = BackupPrefs(context).configured()
 
-    private fun constraints(wifiOnly: Boolean) = Constraints.Builder()
-        .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
-        .setRequiresBatteryNotLow(true)
-        .build()
+    // Only "has a connection". Whether that connection is Wi-Fi is checked when the pass runs.
+    private fun constraints() = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    /** Applies the current switch and options: schedules the regular run, or cancels everything when it is off. */
+    /** Schedules the regular run, or cancels it when there is nothing to talk to. */
     fun sync(context: Context) {
         val app = context.applicationContext
         val work = WorkManager.getInstance(app)
-        val cfg = BackupPrefs(app).config()
-        if (cfg == null || !isActive(app)) {
+        if (!isActive(app)) {
             work.cancelUniqueWork(PERIODIC)
             work.cancelUniqueWork(NOW)
             return
         }
-        val request = PeriodicWorkRequestBuilder<BackupWorker>(15, TimeUnit.MINUTES)
-            .setConstraints(constraints(cfg.wifiOnly))
-            .build()
+        val request = PeriodicWorkRequestBuilder<BackupWorker>(15, TimeUnit.MINUTES).setConstraints(constraints()).build()
         work.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
+        BackupLoop.nudge()
     }
 
-    /** Asks for a run soon (for example because a new photo appeared). Repeated asks collapse into one. */
+    /** Asks for a pass soon (for example because a new photo appeared). Repeated asks collapse into one. */
     fun kick(context: Context, delaySeconds: Long = 60) {
         val app = context.applicationContext
         if (!isActive(app)) return
-        val cfg = BackupPrefs(app).config() ?: return
+        BackupLoop.nudge()
         val request = OneTimeWorkRequestBuilder<BackupWorker>()
             .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
-            .setConstraints(constraints(cfg.wifiOnly))
+            .setConstraints(constraints())
             .build()
         WorkManager.getInstance(app).enqueueUniqueWork(NOW, ExistingWorkPolicy.KEEP, request)
     }
@@ -298,35 +419,11 @@ object BackupScheduler {
 
 class BackupWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
-        val app = applicationContext
-        if (!BackupScheduler.isActive(app)) return Result.success()
-        val config = BackupPrefs(app).config() ?: return Result.success()
-        if (config.wifiOnly && app.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered != false) {
-            return Result.success()
-        }
-        val photos = config.photos && Permissions.fullAccess(app)
-        val videos = config.videos && Permissions.videoAccess(app)
-        if (!photos && !videos) return Result.success()
-        if (!RUNNING.compareAndSet(false, true)) return Result.success()
-        try {
-            val engine = BackupEngine(MediaBackupSource(app), SqliteBackupLedger(app), BackupAndroid.transport())
-            val report = engine.run(
-                config.copy(photos = photos, videos = videos),
-                deadlineMs = System.currentTimeMillis() + BUDGET_MS,
-            ) { isStopped }
-            if (BuildConfig.DEBUG) {
-                Log.i("R3U_BACKUP", "run ${report.result} uploaded=${report.uploaded} existed=${report.alreadyThere} skipped=${report.skipped}")
-            }
-        } catch (e: Exception) {
-            if (BuildConfig.DEBUG) Log.w("R3U_BACKUP", "run failed", e)
-        } finally {
-            RUNNING.set(false)
-        }
+        if (BackupScheduler.isActive(applicationContext)) BackupRunner.run(applicationContext, BUDGET_MS) { isStopped }
         return Result.success()
     }
 
     private companion object {
-        val RUNNING = AtomicBoolean(false)
-        const val BUDGET_MS = 8 * 60_000L // Android ends background jobs after about 10 minutes; the next run resumes
+        const val BUDGET_MS = 8 * 60_000L // Android ends background jobs after about 10 minutes; the next pass resumes
     }
 }

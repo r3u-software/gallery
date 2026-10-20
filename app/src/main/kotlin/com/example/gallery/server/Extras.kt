@@ -39,6 +39,9 @@ interface BackupProvider {
     fun test(): Boolean
 
     fun clear()
+
+    /** What the last pass did, for troubleshooting only. Never shown in the web page. */
+    fun lastNote(): String
 }
 
 object OpenRequests {

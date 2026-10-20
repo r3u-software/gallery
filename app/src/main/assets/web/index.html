@@ -148,30 +148,6 @@
               <button type="button" class="btn ghost" data-open="map"><svg class="ic"><use href="#i-map"></use></svg>Map</button>
             </div>
           </div>
-          <div class="find backup" id="backupCard">
-            <div class="backup-intro">
-              <h3>Backup to Google Drive</h3>
-              <p class="muted">Quietly copies this phone's photos and videos into your own Drive folder, newest first. It shows no progress, and never deletes anything in Drive. To check on it, look in the folder. <a href="https://r3u-software.github.io/gallery/backup.html" target="_blank" rel="noopener noreferrer">How to set it up</a></p>
-            </div>
-            <p class="muted backup-off" id="backupOff" hidden>Backup isn’t available on this phone.</p>
-            <p class="muted backup-auto" id="backupAuto" hidden>Backup is automatic. This app already has its script address and secret built in, so there is nothing to enter. The fields below are only for pointing it at a different script.</p>
-            <form class="backup-form" id="backupForm" autocomplete="off">
-              <label class="field-label" for="backupUrl">Web app address</label>
-              <input class="field" id="backupUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
-              <label class="field-label" for="backupSecret">Secret</label>
-              <input class="field" id="backupSecret" type="password" autocomplete="new-password" spellcheck="false" placeholder="The secret from the setup page">
-              <div class="backup-checks">
-                <label><input type="checkbox" id="backupPhotos" checked> Photos</label>
-                <label><input type="checkbox" id="backupVideos" checked> Videos</label>
-                <label><input type="checkbox" id="backupWifi" checked> Wi-Fi only</label>
-              </div>
-              <div class="btn-row">
-                <button type="submit" class="btn" id="backupSave">Save</button>
-                <button type="button" class="btn ghost" id="backupClear" hidden>Remove</button>
-              </div>
-              <p class="muted backup-msg" id="backupMsg" role="status"></p>
-            </form>
-          </div>
         </section>
       </main>
     </div>

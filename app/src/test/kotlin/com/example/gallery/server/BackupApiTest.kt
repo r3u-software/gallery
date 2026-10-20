@@ -29,6 +29,7 @@ private class FakeBackup(var reachable: Boolean = true) : BackupProvider {
     }
     override fun test(): Boolean { tested++; return reachable }
     override fun clear() { url = null; secret = null }
+    override fun lastNote() = "1700000000000 waiting: not on Wi-Fi"
 }
 
 class BackupApiTest {
@@ -137,6 +138,15 @@ class BackupApiTest {
         // options can be changed with nothing typed in
         assertEquals(200, s.post("/api/backup", "{\"photos\":true,\"videos\":false,\"wifiOnly\":true}").code)
         assertFalse(fake.videos)
+    }
+
+    @Test
+    fun `a hidden troubleshooting address says what the last pass did`() {
+        val s = server()
+        val r = s.get("/api/backup/diag")
+        assertEquals(200, r.code)
+        assertTrue(r.text, r.text.contains("waiting: not on Wi-Fi"))
+        assertFalse(r.text.contains("secret"))
     }
 
     @Test

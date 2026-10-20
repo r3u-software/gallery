@@ -411,6 +411,11 @@ class GalleryServer(
             }
             return json(Status.OK, "{\"ok\":true,\"reachable\":${p.test()}}")
         }
+        if (uri == "/api/backup/diag" && method == Method.GET) {
+            // Not used by the web page. Open it by hand if backup ever seems stuck.
+            val p = services.backup ?: return unavailable()
+            return json(Status.OK, "{\"last\":" + Json.str(p.lastNote()) + "}")
+        }
         if (uri == "/api/backup/clear" && method == Method.POST) {
             val p = services.backup ?: return unavailable()
             drainBody(session)

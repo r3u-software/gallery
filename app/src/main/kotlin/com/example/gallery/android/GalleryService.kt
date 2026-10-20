@@ -109,7 +109,8 @@ class GalleryService : Service() {
         }.also {
             contentResolver.registerContentObserver(MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL), true, it)
         }
-        BackupScheduler.sync(this)
+        BackupScheduler.sync(this) // the fallback job, for when this service is not running
+        BackupLoop.start(this) // backup runs in here, starting as soon as the app is open
 
         acquireWifiLock()
         tracker = NetworkTracker(this) { newIp -> main.post { onNetwork(newIp) } }.also { it.start() }
@@ -224,6 +225,7 @@ class GalleryService : Service() {
         observer = null
         videoObserver?.let { contentResolver.unregisterContentObserver(it) }
         videoObserver = null
+        BackupLoop.stop()
         stopServer()
         findProvider?.stop()
         findProvider = null
