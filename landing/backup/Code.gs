@@ -32,7 +32,11 @@ function doPost(e) {
     if (SECRET.length < 12 || SECRET === 'CHANGE-THIS-TO-A-LONG-RANDOM-WORD') return reply({ ok: false, error: 'set_secret' });
     if (!sameText(String(req.secret || ''), SECRET)) return reply({ ok: false, error: 'unauthorized' });
     if (!/^[A-Za-z0-9_-]{10,}$/.test(FOLDER_ID)) return reply({ ok: false, error: 'set_folder' });
-    if (req.action === 'ping') return reply({ ok: true });
+    if (req.action === 'ping') {
+      // Proves the script can really reach the folder (this fails until the Drive service is added).
+      driveGet(DRIVE_FILES + '/' + FOLDER_ID + '?fields=id&supportsAllDrives=true');
+      return reply({ ok: true });
+    }
     if (req.action === 'init') return init(req);
     return reply({ ok: false, error: 'bad_request' });
   } catch (err) {

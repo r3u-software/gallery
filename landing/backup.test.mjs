@@ -63,6 +63,10 @@ function load(settings) {
           drive.uploads.push({ meta, headers: opts.headers });
           return respond(200, '', { Location: `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=${id}` });
         }
+        if (u.pathname.startsWith('/drive/v3/files/')) {
+          const id = u.pathname.slice('/drive/v3/files/'.length);
+          return id === 'missing-folder' ? respond(404, { error: 'nf' }) : respond(200, { id });
+        }
         if (u.pathname === '/drive/v3/files' && (opts.method || 'get') === 'get') {
           const q = u.searchParams.get('q');
           const name = /name = '((?:[^'\\]|\\.)*)'/.exec(q)[1].replace(/\\(.)/g, '$1');
@@ -96,6 +100,8 @@ const photo = { secret: SECRET, action: 'init', name: "O'Brien\\IMG_1.jpg", mime
   assert.deepEqual(call({ ...photo, secret: 'nope' }), { ok: false, error: 'unauthorized' });
   assert.deepEqual(call({ action: 'ping' }), { ok: false, error: 'unauthorized' });
   assert.deepEqual(call({ secret: SECRET, action: 'ping' }), { ok: true });
+  const noDrive = load({ ...base, folderId: 'missing-folder' });
+  assert.deepEqual(noDrive.call({ secret: SECRET, action: 'ping' }), { ok: false, error: 'server_error' }); // ping really checks the folder
   assert.deepEqual(call({ secret: SECRET, action: 'what' }), { ok: false, error: 'bad_request' });
 }
 { // unconfigured scripts refuse to run

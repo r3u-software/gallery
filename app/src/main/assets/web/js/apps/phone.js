@@ -112,7 +112,7 @@ async function saveBackup(event) {
     $('backupUrl').value = '';
     $('backupSecret').value = '';
     backupMessage(
-      r.reachable ? 'Saved. The script answered, so backup starts by itself.' : 'Saved, but the script did not answer. Check the address and the secret.',
+      r.reachable ? 'Saved. The script can reach your folder, so backup starts by itself.' : 'Saved, but the script did not confirm it can reach your folder. Check the address, the secret and that you added the Drive service.',
       !r.reachable,
     );
     await loadBackup();
