@@ -97,7 +97,7 @@ body { background: radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, v
 .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 .check { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 15px; }
 input[type="checkbox"] { width: auto; margin: 0; }
-.card a { color: var(--accent); }
+.card a:not(.btn) { color: var(--accent); }
 .card code, code.secret { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; background: var(--accent-soft); padding: 1px 6px; border-radius: 6px; }
 code.secret { display: block; width: 100%; padding: 12px 14px; margin-bottom: 4px; overflow-wrap: anywhere; user-select: all; }
 details.src { width: 100%; margin: 4px 0 10px; }
