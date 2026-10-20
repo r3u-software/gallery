@@ -87,7 +87,8 @@ private class FakeGoogle : NanoHTTPD(0) {
         val slot = slots[id]
         if (slot == null || expireSessions) return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "gone")
         val range = session.headers["content-range"].orEmpty()
-        val data = files["content"]?.let { File(it).readBytes() } ?: ByteArray(0)
+        // NanoHTTPD gives an empty path (not an empty file) when the body has no bytes, as in a status probe.
+        val data = files["content"]?.takeIf { it.isNotEmpty() }?.let { File(it).readBytes() } ?: ByteArray(0)
         val isProbe = range.startsWith("bytes */")
         if (!isProbe) {
             putCount++
