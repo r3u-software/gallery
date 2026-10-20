@@ -269,6 +269,8 @@ fun SettingsScreen(
     onChangePasscode: () -> Unit,
     onStopRinging: () -> Unit,
     onBack: () -> Unit,
+    blockCapture: Boolean = true,
+    onBlockCapture: (Boolean) -> Unit = {},
 ) = ScreenFrame {
     Title("What your computer can use")
     Body("Switch on only what you need. Each feature stays locked behind your web passcode.")
@@ -294,6 +296,23 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
+    }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Block screenshots and screen recording", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "This app shows black in screenshots, recordings and the recent-apps preview",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = blockCapture, onCheckedChange = onBlockCapture)
         }
     }
     if (ringing) {

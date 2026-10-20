@@ -29,6 +29,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import com.example.gallery.android.BackupPrefs
 import com.example.gallery.android.BackupScheduler
+import com.example.gallery.android.CapturePrefs
 import com.example.gallery.android.FeaturePrefs
 import com.example.gallery.android.GalleryService
 import com.example.gallery.android.NotificationHub
@@ -57,6 +58,7 @@ class MainActivity : FragmentActivity() {
     private var screen by mutableStateOf(Screen.Checking)
     private var showSettings by mutableStateOf(false)
     private var changingPasscode by mutableStateOf(false)
+    private var captureBlocked by mutableStateOf(true)
 
     /** Bumped on resume and after permission results so permission-dependent labels recompute. */
     private var refreshTick by mutableIntStateOf(0)
@@ -90,8 +92,14 @@ class MainActivity : FragmentActivity() {
      * preview is blank. Release builds only: the documentation screenshots are taken from debug builds in CI.
      */
     private fun blockCapture() {
+        captureBlocked = CapturePrefs(this).blocked
+        applyCaptureBlock()
+    }
+
+    private fun applyCaptureBlock() {
         if (com.example.gallery.BuildConfig.DEBUG) return
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        if (captureBlocked) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     /**
@@ -213,6 +221,12 @@ class MainActivity : FragmentActivity() {
             onChangePasscode = { changingPasscode = true },
             onStopRinging = {},
             onBack = { showSettings = false },
+            blockCapture = captureBlocked,
+            onBlockCapture = { on ->
+                CapturePrefs(this).blocked = on
+                captureBlocked = on
+                applyCaptureBlock()
+            },
         )
     }
 

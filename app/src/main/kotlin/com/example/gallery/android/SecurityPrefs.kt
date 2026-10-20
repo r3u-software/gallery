@@ -58,3 +58,14 @@ class FeaturePrefs(context: Context) : FeatureFlags {
         prefs.edit().putBoolean(feature.key, enabled).apply()
     }
 }
+
+/** Whether the app's own screens are hidden from screenshots, screen recording and the recent-apps preview. On by default. */
+class CapturePrefs(context: Context) {
+    private val prefs = context.applicationContext.getSharedPreferences("capture", Context.MODE_PRIVATE)
+
+    var blocked: Boolean
+        get() = prefs.getBoolean("blocked", true)
+        set(value) {
+            prefs.edit().putBoolean("blocked", value).apply()
+        }
+}

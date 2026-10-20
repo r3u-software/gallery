@@ -142,7 +142,7 @@ phone --(sends the file itself, in chunks, resumable)---------------------------
 
 ## Screenshots and screen recording
 
-In release builds every screen of the phone app (the link and QR code, settings, the unlock screens) is a secure window: screenshots and screen recordings come out black and the recent-apps preview is blank. Debug builds are left alone so CI can take the documentation screenshots. This cannot stop another camera pointed at the screen, and it does not apply to the web dashboard in a browser.
+In release builds every screen of the phone app (the link and QR code, settings, the unlock screens) is a secure window by default (switch it off under Features and passcode if you want to take screenshots): screenshots and screen recordings come out black and the recent-apps preview is blank. Debug builds are left alone so CI can take the documentation screenshots. This cannot stop another camera pointed at the screen, and it does not apply to the web dashboard in a browser.
 
 ## How it behaves
 
