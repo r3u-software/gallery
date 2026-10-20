@@ -44,8 +44,11 @@ class BackupEngine(
         return RunReport(RunResult.ALL_DONE, uploaded, existed, skipped)
     }
 
-    private fun backUp(config: BackupConfig, item: BackupItem, deadlineMs: Long, shouldStop: () -> Boolean, mayRestart: Boolean): One {
-        val key = item.key
+    private fun backUp(config: BackupConfig, listed: BackupItem, deadlineMs: Long, shouldStop: () -> Boolean, mayRestart: Boolean): One {
+        val key = listed.key
+        // Back up what is really in the file, not what MediaStore last said, so nothing is cut short.
+        val actual = source.sizeOf(listed)?.takeIf { it > 0 } ?: return One.SKIPPED
+        val item = if (actual == listed.size) listed else listed.copy(size = actual)
         var session = ledger.session(key)
         var offset = 0L
 
@@ -91,13 +94,13 @@ class BackupEngine(
                 sleep(RETRY_PAUSE_MS)
                 result = when (val s = transport.status(session, item.size)) {
                     is UploadStatus.Incomplete, UploadStatus.Complete -> s
-                    else -> return if (s is UploadStatus.Transient) One.NETWORK else restartOrSkip(config, item, deadlineMs, shouldStop, mayRestart)
+                    else -> return if (s is UploadStatus.Transient) One.NETWORK else restartOrSkip(config, listed, deadlineMs, shouldStop, mayRestart)
                 }
             }
             when (result) {
                 UploadStatus.Complete -> { finish(key); return One.UPLOADED }
                 is UploadStatus.Incomplete -> offset = result.next
-                UploadStatus.SessionGone -> return restartOrSkip(config, item, deadlineMs, shouldStop, mayRestart)
+                UploadStatus.SessionGone -> return restartOrSkip(config, listed, deadlineMs, shouldStop, mayRestart)
                 is UploadStatus.Rejected -> { ledger.clearSession(key); return One.SKIPPED }
                 is UploadStatus.Transient -> return One.NETWORK
             }

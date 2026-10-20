@@ -50,10 +50,10 @@ function init(req) {
   if (!name || !(size > 0)) return reply({ ok: false, error: 'bad_request' });
 
   const parent = ALBUM_SUBFOLDERS ? albumFolder(cleanName(req.album) || 'Other') : FOLDER_ID;
-  if (alreadyThere(parent, name, size)) return reply({ ok: true, exists: true });
+  const taken = Number(req.modified);
+  if (alreadyThere(parent, name, size, taken)) return reply({ ok: true, exists: true });
 
   const meta = { name: name, parents: [parent], mimeType: mime };
-  const taken = Number(req.modified);
   if (taken > 0) meta.modifiedTime = new Date(taken).toISOString();
 
   const resp = UrlFetchApp.fetch(DRIVE_UPLOAD, {
@@ -80,10 +80,15 @@ function init(req) {
   return reply({ ok: false, error: 'server_error' });
 }
 
-function alreadyThere(parent, name, size) {
+// Same name, same size and (when the phone says when the photo was taken) the same time. Matching on the time
+// too means two different photos that happen to share a name and size are both kept.
+function alreadyThere(parent, name, size, taken) {
   const q = "name = '" + esc(name) + "' and '" + parent + "' in parents and trashed = false";
-  const found = driveGet(DRIVE_FILES + '?q=' + encodeURIComponent(q) + '&fields=' + encodeURIComponent('files(id,size)') + '&pageSize=20');
-  return (found.files || []).some(function (f) { return Number(f.size) === size; });
+  const found = driveGet(DRIVE_FILES + '?q=' + encodeURIComponent(q) + '&fields=' + encodeURIComponent('files(id,size,modifiedTime)') + '&pageSize=20');
+  return (found.files || []).some(function (f) {
+    if (Number(f.size) !== size) return false;
+    return !(taken > 0) || Math.abs(Date.parse(f.modifiedTime) - taken) < 2000;
+  });
 }
 
 function albumFolder(album) {

@@ -4,6 +4,15 @@ const $ = (id) => document.getElementById(id);
 
 const state = { source: '', manifest: '', secret: randomSecret() };
 
+// A link like backup.html#folder=<id or a Drive folder address> fills in step 1. The part after # never leaves the browser.
+function prefillFolder() {
+  const m = location.hash.match(/^#folder=(.+)$/);
+  if (!m) return;
+  let text = m[1];
+  try { text = decodeURIComponent(text); } catch { /* keep as typed */ }
+  $('folder').value = text;
+}
+
 async function load() {
   const [code, manifest] = await Promise.all([
     fetch('backup/Code.gs').then((r) => r.text()),
@@ -52,4 +61,5 @@ $('copyScript').addEventListener('click', () => copy($('copyScript'), $('source'
 $('copyManifest').addEventListener('click', () => copy($('copyManifest'), state.manifest));
 $('copySecret').addEventListener('click', () => copy($('copySecret'), state.secret));
 
+prefillFolder();
 load().catch(() => { $('scriptHint').textContent = 'Could not load the script. Reload this page.'; });

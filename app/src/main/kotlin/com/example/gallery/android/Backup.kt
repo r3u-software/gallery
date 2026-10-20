@@ -180,9 +180,20 @@ class MediaBackupSource(context: Context) : BackupSource {
         }
     }
 
+    /** MediaStore's SIZE can lag behind the file; ask the file itself so a backup is never cut short. */
+    override fun sizeOf(item: BackupItem): Long? = try {
+        resolver.openFileDescriptor(uriOf(item), "r")?.use { it.statSize }?.takeIf { it > 0 }
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun uriOf(item: BackupItem): Uri {
+        val uri = ContentUris.withAppendedId(collection(item.kind), item.id)
+        return if (item.kind == MediaKind.IMAGE && keepLocation) MediaStore.setRequireOriginal(uri) else uri
+    }
+
     override fun open(item: BackupItem, offset: Long): InputStream? {
-        var uri = ContentUris.withAppendedId(collection(item.kind), item.id)
-        if (item.kind == MediaKind.IMAGE && keepLocation) uri = MediaStore.setRequireOriginal(uri)
+        val uri = uriOf(item)
         val pfd: ParcelFileDescriptor = resolver.openFileDescriptor(uri, "r") ?: return null
         val stream = ParcelFileDescriptor.AutoCloseInputStream(pfd)
         if (offset > 0) (stream as FileInputStream).channel.position(offset)

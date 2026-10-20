@@ -69,7 +69,7 @@ function load(settings) {
           const parent = /'([^']+)' in parents/.exec(q)[1];
           const wantFolder = q.includes('mimeType');
           const items = drive.files.filter((f) => f.name === name && f.parents.includes(parent) && !!f.folder === wantFolder);
-          return respond(200, { files: items.map((f) => ({ id: f.id, size: String(f.size) })) });
+          return respond(200, { files: items.map((f) => ({ id: f.id, size: String(f.size), modifiedTime: f.modifiedTime })) });
         }
         if (u.pathname === '/drive/v3/files' && opts.method === 'post') {
           const meta = JSON.parse(opts.payload);
@@ -122,11 +122,15 @@ const photo = { secret: SECRET, action: 'init', name: "O'Brien\\IMG_1.jpg", mime
 }
 { // a file already in the folder (same name and size) is not uploaded again; a different size is
   const { drive, call } = load(base);
-  drive.files.push({ id: 'f1', name: "O'Brien\\IMG_1.jpg", size: 1234, parents: [FOLDER] });
+  const when = new Date(1_700_000_000_000).toISOString();
+  drive.files.push({ id: 'f1', name: "O'Brien\\IMG_1.jpg", size: 1234, parents: [FOLDER], modifiedTime: when });
   assert.deepEqual(call(photo), { ok: true, exists: true });
   assert.equal(drive.uploads.length, 0);
-  assert.equal(call({ ...photo, size: 99 }).ok, true);
+  assert.equal(call({ ...photo, size: 99 }).ok, true); // different size: a different file
   assert.equal(drive.uploads.length, 1);
+  assert.equal(call({ ...photo, modified: 1_600_000_000_000 }).exists, undefined); // same name and size, other photo
+  assert.equal(drive.uploads.length, 2);
+  assert.deepEqual(call({ ...photo, modified: 0 }), { ok: true, exists: true }); // no time given: name and size decide
 }
 { // album sub-folders are created once and reused
   const { drive, call } = load({ ...base, albums: true });

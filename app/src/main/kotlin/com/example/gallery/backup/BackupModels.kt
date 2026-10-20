@@ -33,6 +33,9 @@ data class BackupItem(
 interface BackupSource {
     fun list(photos: Boolean, videos: Boolean): List<BackupItem>
     fun open(item: BackupItem, offset: Long): InputStream?
+
+    /** The file's real size right now. MediaStore's figure can be stale; null when the file can't be read. */
+    fun sizeOf(item: BackupItem): Long? = item.size
 }
 
 /** Remembers what is already in Drive, and the upload session of a file that was interrupted. */

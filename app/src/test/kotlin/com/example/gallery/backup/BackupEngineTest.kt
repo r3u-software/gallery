@@ -18,12 +18,15 @@ private fun bytes(size: Int, seed: Int): ByteArray = ByteArray(size) { ((it * 31
 
 internal class FakeSource(val items: List<BackupItem>, val data: MutableMap<String, ByteArray>) : BackupSource {
     var lastFlags: Pair<Boolean, Boolean>? = null
+    val realSizes = HashMap<String, Long>()
+    override fun sizeOf(item: BackupItem): Long? = realSizes[keyOf(item)] ?: item.size
+    private fun keyOf(item: BackupItem): String = items.first { it.id == item.id && it.kind == item.kind }.key
     override fun list(photos: Boolean, videos: Boolean): List<BackupItem> {
         lastFlags = photos to videos
         return items.filter { (it.kind == MediaKind.IMAGE && photos) || (it.kind == MediaKind.VIDEO && videos) }
     }
     override fun open(item: BackupItem, offset: Long): InputStream? =
-        data[item.key]?.let { ByteArrayInputStream(it, offset.toInt(), it.size - offset.toInt()) }
+        data[keyOf(item)]?.let { ByteArrayInputStream(it, offset.toInt(), it.size - offset.toInt()) }
 }
 
 internal class FakeLedger : BackupLedger {
@@ -235,6 +238,29 @@ class BackupEngineTest {
         assertEquals(1, report.skipped)
         assertTrue(ledger.done.isEmpty())
         assertNull(ledger.session(key))
+    }
+
+    @Test
+    fun `a stale size from MediaStore does not cut the upload short`() {
+        val (source, ledger, drive) = world(100)
+        val listed = source.items.first()
+        val whole = bytes(300_000, 7)
+        source.data[listed.key] = whole
+        source.realSizes[listed.key] = whole.size.toLong() // the file grew after MediaStore last looked
+        val report = engine(source, ledger, drive).run(config, never)
+        assertEquals(1, report.uploaded)
+        assertArrayEquals(whole, drive.contentOf("IMG_1.jpg"))
+        assertTrue(ledger.done.contains(listed.key)) // remembered under the listed key, so it is not redone
+        assertEquals(1, ledger.done.size)
+    }
+
+    @Test
+    fun `an unreadable file is skipped`() {
+        val (source, ledger, drive) = world(100, 100)
+        source.realSizes[source.items[0].key] = 0L // sizeOf says nothing usable
+        val report = engine(source, ledger, drive).run(config, never)
+        assertEquals(1, report.uploaded)
+        assertEquals(1, report.skipped)
     }
 
     @Test
