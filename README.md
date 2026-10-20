@@ -140,6 +140,10 @@ phone --(sends the file itself, in chunks, resumable)---------------------------
 - **Limits.** Drive's free 15 GB is shared with Gmail and Photos. Google caps Apps Script at about 20,000 Drive calls a day (about 10,000 files). Photo GPS data is kept when the *photo location* permission is granted.
 - **Tests.** `node landing/backup.test.mjs` runs the real script against a fake Google; the Kotlin tests cover the uploader, resume and the API; the emulator job (`tools/e2e/fake_gas.py`) backs a photo up end to end.
 
+## Screenshots and screen recording
+
+In release builds every screen of the phone app (the link and QR code, settings, the unlock screens) is a secure window: screenshots and screen recordings come out black and the recent-apps preview is blank. Debug builds are left alone so CI can take the documentation screenshots. This cannot stop another camera pointed at the screen, and it does not apply to the web dashboard in a browser.
+
 ## How it behaves
 
 - **Start flow:** photo permission ("Allow all") → biometric / device-credential prompt → server starts. The prompt appears on every fresh app launch. No screen lock set → the server never starts and the app asks you to set one. Partial photo access ("Select photos") → a screen explains full access is needed.

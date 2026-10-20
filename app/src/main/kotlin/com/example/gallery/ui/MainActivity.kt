@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.provider.Settings
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -77,10 +78,20 @@ class MainActivity : FragmentActivity() {
         passcode = PasscodeStore(this)
         features = FeaturePrefs(this)
         applyE2eHooks()
+        blockCapture()
         enableEdgeToEdge()
         setContent {
             GalleryTheme { Root() }
         }
+    }
+
+    /**
+     * Screenshots, screen recording and screen sharing show a black window for this app, and the recent-apps
+     * preview is blank. Release builds only: the documentation screenshots are taken from debug builds in CI.
+     */
+    private fun blockCapture() {
+        if (com.example.gallery.BuildConfig.DEBUG) return
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     /**
