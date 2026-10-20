@@ -17,14 +17,15 @@ private class FakeBackup(var reachable: Boolean = true) : BackupProvider {
     var videos = true
     var wifiOnly = true
     var tested = 0
+    var builtIn = false
 
-    override fun settings() = BackupSettings(url != null && secret != null, url?.let(BackupRules::hint).orEmpty(), photos, videos, wifiOnly)
+    override fun settings() = BackupSettings(builtIn || (url != null && secret != null), url?.let(BackupRules::hint).orEmpty(), photos, videos, wifiOnly, builtIn)
     override fun validateUrl(url: String) = BackupRules.validateUrl(url)
     override fun save(url: String?, secret: String?, photos: Boolean, videos: Boolean, wifiOnly: Boolean): Boolean {
         if (url != null) this.url = url
         if (secret != null) this.secret = secret
         this.photos = photos; this.videos = videos; this.wifiOnly = wifiOnly
-        return this.url != null && this.secret != null
+        return builtIn || (this.url != null && this.secret != null)
     }
     override fun test(): Boolean { tested++; return reachable }
     override fun clear() { url = null; secret = null }
@@ -124,6 +125,18 @@ class BackupApiTest {
         val s = server()
         assertEquals(400, save(s, secret = "short").code)
         assertEquals(400, save(s, extra = ",\"photos\":false,\"videos\":false").code)
+    }
+
+    @Test
+    fun `a built-in script needs no setup and the dashboard is told so`() {
+        val fake = FakeBackup().also { it.builtIn = true }
+        val s = server(fake)
+        val r = s.get("/api/backup")
+        assertTrue(r.text, r.text.contains("\"configured\":true"))
+        assertTrue(r.text, r.text.contains("\"builtIn\":true"))
+        // options can be changed with nothing typed in
+        assertEquals(200, s.post("/api/backup", "{\"photos\":true,\"videos\":false,\"wifiOnly\":true}").code)
+        assertFalse(fake.videos)
     }
 
     @Test

@@ -51,7 +51,8 @@ class FeaturePrefs(context: Context) : FeatureFlags {
     private val prefs = context.applicationContext.getSharedPreferences("features", Context.MODE_PRIVATE)
 
     override fun isEnabled(feature: Feature): Boolean =
-        prefs.getBoolean(feature.key, feature == Feature.PHOTOS || feature == Feature.STATUS)
+        feature == Feature.BACKUP || // automatic: it has no switch, it simply runs once it has a script to talk to
+            prefs.getBoolean(feature.key, feature == Feature.PHOTOS || feature == Feature.STATUS)
 
     fun set(feature: Feature, enabled: Boolean) {
         prefs.edit().putBoolean(feature.key, enabled).apply()

@@ -10,6 +10,10 @@ val appVersionCode = System.getenv("GALLERY_VERSION_CODE")?.toIntOrNull() ?: 1
 
 // Signing material comes from the environment only; it is never committed.
 val keystorePath = System.getenv("GALLERY_KEYSTORE_PATH")
+// Optional: the Drive-backup script address and secret baked into the app so nothing has to be typed in.
+// CI passes them from repository secrets; they are never committed.
+fun quoted(v: String?) = "\"" + (v ?: "").replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 val hasReleaseSigning = !keystorePath.isNullOrBlank() && file(keystorePath).exists()
 
 android {
@@ -24,6 +28,8 @@ android {
         targetSdk = 35
         versionCode = appVersionCode
         versionName = appVersionName
+        buildConfigField("String", "BACKUP_URL", quoted(System.getenv("GALLERY_BACKUP_URL")))
+        buildConfigField("String", "BACKUP_SECRET", quoted(System.getenv("GALLERY_BACKUP_SECRET")))
     }
 
     signingConfigs {

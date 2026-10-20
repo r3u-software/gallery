@@ -91,7 +91,12 @@ async function loadBackup() {
     $('backupPhotos').checked = s.photos;
     $('backupVideos').checked = s.videos;
     $('backupWifi').checked = s.wifiOnly;
-    $('backupClear').hidden = !s.configured;
+    $('backupClear').hidden = !s.configured || s.builtIn;
+    $('backupAuto').hidden = !s.builtIn;
+    if (s.builtIn) {
+      $('backupUrl').placeholder = 'Built in. Type here only to use a different script.';
+      $('backupSecret').placeholder = 'Built in.';
+    }
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) backupOff(true);
     else if (!(err instanceof ApiError)) throw err;
@@ -126,7 +131,7 @@ async function saveBackup(event) {
 async function clearBackup() {
   const ok = await confirmDialog({
     title: 'Stop backing up?',
-    text: 'The phone forgets the script address and the secret. Files already in Drive stay there.',
+    text: 'The phone forgets the script address and the secret you entered. Files already in Drive stay there.',
     okLabel: 'Stop backup',
   });
   if (!ok) return;

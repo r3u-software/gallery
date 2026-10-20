@@ -134,7 +134,7 @@ main.content { padding: 0; min-height: 0; min-width: 0; overflow-y: auto; overfl
 .backup-checks label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .backup-msg { min-height: 1.4em; margin: 8px 0 0; }
 .backup-msg.bad { color: var(--danger); }
-.backup-off { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--text); }
+.backup-off, .backup-auto { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--text); }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn-row .btn { gap: 6px; }
 

@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 import { extractFolderId, randomSecret, buildScript } from './backup-lib.js';
 
 // ------------------------------------------------------------ page helpers
-const FOLDER = '1uVRLfJvL9Pzswe7LFlyYTV6qLY8qE2Ic';
+const FOLDER = '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456';
 assert.equal(extractFolderId(`https://drive.google.com/drive/folders/${FOLDER}?usp=sharing`), FOLDER);
 assert.equal(extractFolderId(`https://drive.google.com/drive/u/1/folders/${FOLDER}`), FOLDER);
 assert.equal(extractFolderId(`https://drive.google.com/open?id=${FOLDER}`), FOLDER);

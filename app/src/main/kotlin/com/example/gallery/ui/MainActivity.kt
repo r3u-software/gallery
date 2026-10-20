@@ -45,6 +45,7 @@ class MainViewModel : ViewModel() {
     var promptShowing = false
     var askedPermission = false
     var askedNotifications = false
+    var askedBackup = false
     var serverRequested = false
 }
 
@@ -188,15 +189,6 @@ class MainActivity : FragmentActivity() {
             ),
             row(Feature.FILES, "Files and clipboard", "Send files and text between phone and computer", null, null),
             row(Feature.FIND, "Find my phone and open on phone", "Ring this phone, or open a link, number or map on it", null, null),
-            row(
-                Feature.BACKUP, "Backup to Google Drive", "Quietly copy photos and videos to your own Drive folder",
-                when {
-                    !Permissions.videoAccess(this) -> "Needs permission to read videos"
-                    !BackupPrefs(this).configured() -> "Finish setup on the web dashboard (Phone)"
-                    else -> null
-                },
-                if (Permissions.videoAccess(this)) null else "Grant permission",
-            ),
         )
         SettingsScreen(
             rows = rows,
@@ -204,7 +196,6 @@ class MainActivity : FragmentActivity() {
             onToggle = { r, on ->
                 features.set(r.feature, on)
                 if (on) onFeatureEnabled(r.feature)
-                if (r.feature == Feature.BACKUP) BackupScheduler.sync(this)
                 refreshTick++
             },
             onFix = { r -> onFeatureEnabled(r.feature, force = true) },
@@ -238,10 +229,6 @@ class MainActivity : FragmentActivity() {
                 }
             Feature.CONTACTS ->
                 if (!contactsGranted()) smsPermissions.launch(arrayOf(Manifest.permission.READ_CONTACTS))
-            Feature.BACKUP -> {
-                val missing = Permissions.backupToRequest(this)
-                if (missing.isNotEmpty()) smsPermissions.launch(missing)
-            }
             else -> Unit
         }
     }
@@ -316,6 +303,12 @@ class MainActivity : FragmentActivity() {
             vm.askedNotifications = true
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             return
+        }
+        // Backup runs by itself. It only needs to read videos and photo locations, so ask once, here.
+        if (BackupPrefs(this).configured() && !vm.askedBackup) {
+            vm.askedBackup = true
+            val missing = Permissions.backupToRequest(this)
+            if (missing.isNotEmpty()) smsPermissions.launch(missing)
         }
         vm.serverRequested = true
         ServerStateHolder.state = ServerState.Starting

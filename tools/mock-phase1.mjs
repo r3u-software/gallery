@@ -41,7 +41,7 @@ const contacts = [
 ];
 
 const backup = { url: '', secret: '', photos: true, videos: true, wifiOnly: true };
-const backupSettings = () => ({ configured: !!(backup.url && backup.secret), urlHint: backup.url ? '…' + backup.url.slice(-14) : '', photos: backup.photos, videos: backup.videos, wifiOnly: backup.wifiOnly });
+const backupSettings = () => ({ configured: !!(backup.url && backup.secret), urlHint: backup.url ? '…' + backup.url.slice(-14) : '', photos: backup.photos, videos: backup.videos, wifiOnly: backup.wifiOnly, builtIn: !!process.env.BACKUP_BUILTIN });
 
 const readBody = (req) => new Promise((res) => { let b = ''; req.on('data', (d) => (b += d)); req.on('end', () => res(b)); });
 const field = (raw, k) => { try { return JSON.parse(raw)[k]; } catch { return undefined; } };

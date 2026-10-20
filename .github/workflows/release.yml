@@ -67,6 +67,8 @@ jobs:
           GALLERY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           GALLERY_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           GALLERY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GALLERY_BACKUP_URL: ${{ secrets.GALLERY_BACKUP_URL }}
+          GALLERY_BACKUP_SECRET: ${{ secrets.GALLERY_BACKUP_SECRET }}
         run: gradle --no-daemon assembleRelease
 
       - name: Verify the APK is signed

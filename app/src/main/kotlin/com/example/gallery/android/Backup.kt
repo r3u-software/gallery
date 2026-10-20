@@ -33,7 +33,6 @@ import com.example.gallery.backup.HttpDriveTransport
 import com.example.gallery.backup.MediaKind
 import com.example.gallery.server.BackupProvider
 import com.example.gallery.server.BackupSettings
-import com.example.gallery.server.Feature
 import java.io.FileInputStream
 import java.io.InputStream
 import java.net.URL
@@ -52,16 +51,32 @@ object BackupAndroid {
 class BackupPrefs(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("backup", Context.MODE_PRIVATE)
 
-    val url: String? get() = prefs.getString(KEY_URL, null)?.takeIf { it.isNotBlank() }
+    private val savedUrl: String? get() = prefs.getString(KEY_URL, null)?.takeIf { it.isNotBlank() }
+    private val savedSecret: String? get() = prefs.getString(KEY_SECRET, null)?.takeIf { it.isNotBlank() }
+
+    /** The script address and secret this build carries (empty in debug and in builds made without them). */
+    private val builtInUrl: String? get() = BuildConfig.BACKUP_URL.takeIf { it.isNotBlank() }
+    private val builtInSecret: String? get() = BuildConfig.BACKUP_SECRET.takeIf { it.isNotBlank() }
+
+    /** Someone typed their own pair into the dashboard; it wins over the built-in one. */
+    private fun hasSavedPair() = savedUrl != null && savedSecret != null
+
+    /** True when the app is using the pair it was built with. */
+    fun builtIn(): Boolean = !hasSavedPair() && builtInUrl != null && builtInSecret != null
+
+    val url: String? get() = if (hasSavedPair()) savedUrl else if (builtIn()) builtInUrl else savedUrl
     val photos: Boolean get() = prefs.getBoolean(KEY_PHOTOS, true)
     val videos: Boolean get() = prefs.getBoolean(KEY_VIDEOS, true)
     val wifiOnly: Boolean get() = prefs.getBoolean(KEY_WIFI, true)
 
-    fun configured(): Boolean = url != null && !prefs.getString(KEY_SECRET, null).isNullOrBlank()
+    fun configured(): Boolean = hasSavedPair() || builtIn()
 
     fun config(): BackupConfig? {
-        val u = url ?: return null
-        val s = prefs.getString(KEY_SECRET, null)?.takeIf { it.isNotBlank() } ?: return null
+        val (u, s) = when {
+            hasSavedPair() -> savedUrl!! to savedSecret!!
+            builtIn() -> builtInUrl!! to builtInSecret!!
+            else -> return null
+        }
         return BackupConfig(u, s, photos, videos, wifiOnly)
     }
 
@@ -206,8 +221,14 @@ class BackupSettingsProvider(context: Context) : BackupProvider {
     private val app = context.applicationContext
     private val prefs = BackupPrefs(app)
 
-    override fun settings() =
-        BackupSettings(prefs.configured(), prefs.url?.let(BackupRules::hint).orEmpty(), prefs.photos, prefs.videos, prefs.wifiOnly)
+    override fun settings() = BackupSettings(
+        configured = prefs.configured(),
+        urlHint = if (prefs.builtIn()) "" else prefs.url?.let(BackupRules::hint).orEmpty(),
+        photos = prefs.photos,
+        videos = prefs.videos,
+        wifiOnly = prefs.wifiOnly,
+        builtIn = prefs.builtIn(),
+    )
 
     override fun validateUrl(url: String): String? =
         if (BuildConfig.DEBUG && url.startsWith("http://10.0.2.2:")) null else BackupRules.validateUrl(url)
@@ -238,8 +259,8 @@ object BackupScheduler {
     private const val PERIODIC = "r3u-backup-periodic"
     private const val NOW = "r3u-backup-now"
 
-    fun isActive(context: Context): Boolean =
-        FeaturePrefs(context).isEnabled(Feature.BACKUP) && BackupPrefs(context).configured()
+    /** Backup has no switch: it runs by itself as soon as the app has a script to talk to. */
+    fun isActive(context: Context): Boolean = BackupPrefs(context).configured()
 
     private fun constraints(wifiOnly: Boolean) = Constraints.Builder()
         .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)

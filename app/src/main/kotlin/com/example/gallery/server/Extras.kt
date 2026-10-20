@@ -16,7 +16,15 @@ interface OpenProvider {
 }
 
 /** What the dashboard may know about the Drive backup. The secret never leaves the phone, and progress is never reported. */
-data class BackupSettings(val configured: Boolean, val urlHint: String, val photos: Boolean, val videos: Boolean, val wifiOnly: Boolean)
+data class BackupSettings(
+    val configured: Boolean,
+    val urlHint: String,
+    val photos: Boolean,
+    val videos: Boolean,
+    val wifiOnly: Boolean,
+    /** True when the app already carries its own script address and secret, so nothing has to be entered. */
+    val builtIn: Boolean = false,
+)
 
 interface BackupProvider {
     fun settings(): BackupSettings
@@ -64,7 +72,7 @@ object JsonExtras {
 
     fun backup(s: BackupSettings): String =
         "{\"configured\":${s.configured},\"urlHint\":${Json.str(s.urlHint)},\"photos\":${s.photos}," +
-            "\"videos\":${s.videos},\"wifiOnly\":${s.wifiOnly}}"
+            "\"videos\":${s.videos},\"wifiOnly\":${s.wifiOnly},\"builtIn\":${s.builtIn}}"
 
     fun contacts(permission: Boolean, items: List<Contact>): String =
         "{\"permission\":$permission,\"items\":[" + items.joinToString(",") { c ->
