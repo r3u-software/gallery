@@ -48,6 +48,7 @@ installed on the owner's PC for development.** `.devcontainer/` gives JDK 17 + A
 - **Signing keystore and its passwords**: stored as the repo secrets `ANDROID_KEYSTORE_*` / `ANDROID_KEY_*`, and backed up by the owner outside OneDrive. Losing it means no update can install over the old app.
 - **Repo secrets** `GALLERY_BACKUP_URL`, `GALLERY_BACKUP_SECRET` (see above).
 - **The Apps Script project and the Drive folder** live in the owner's Google account. The script has the full `drive` scope (the folder pre-existed, and `drive.file` can't see folders the script didn't create) plus the **Drive API advanced service**. Without that service every Drive call fails because the hidden Cloud project has the API off. The folder's sharing must stay **Restricted**.
+- `CLAUDE.md` starts with an import of `../../BRAND-SYSTEM.md` (the shared R3U Suite brand file). It exists only in the owner's orchestrator folder, so it is simply missing when you work from this repo alone; harmless, because Phone Link's own visual spec wins where they differ.
 - Claude's local memory and the conversation transcript (on the owner's PC; they hold personal details and are not for the repo).
 
 ## How to test
