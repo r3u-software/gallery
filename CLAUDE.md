@@ -11,6 +11,11 @@ UI itself. No USB, ADB, or cloud.
 > the original brief and in `app/src/main/assets/web/css/styles.css`; where
 > they differ, the Gallery spec wins.
 
+## Start here
+
+Read [docs/HANDOFF.md](docs/HANDOFF.md) first: current state, every decision already made (so nothing is asked
+twice), what lives outside this repo, how to test (including against real Google), and the pitfalls already hit.
+
 ## Layout
 
 ```

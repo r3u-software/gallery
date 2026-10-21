@@ -1,0 +1,25 @@
+name: Drive check
+
+# Manual. Talks to the real deployed Apps Script with the repository secrets and says whether Drive backup can work.
+# "upload" also puts one tiny file (r3u-ci-check.txt) in the Camera folder of the backup folder.
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Also upload one tiny test file to Drive
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the deployed script
+        env:
+          GALLERY_BACKUP_URL: ${{ secrets.GALLERY_BACKUP_URL }}
+          GALLERY_BACKUP_SECRET: ${{ secrets.GALLERY_BACKUP_SECRET }}
+          UPLOAD: ${{ inputs.upload }}
+        run: |
+          if [ "$UPLOAD" = "true" ]; then node tools/drive-check.mjs --upload; else node tools/drive-check.mjs; fi
